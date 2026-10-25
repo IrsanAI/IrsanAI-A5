@@ -1,0 +1,53 @@
+IrsanAI-A5 – Agent-first Reverse Engineering Stack
+Copyright (c) 2026 IrsanAI
+
+This product includes software developed by third parties.
+Attribution is preserved as required by the respective licenses.
+
+--------------------------------------------------
+Ghidra (A2)
+  License : Apache License 2.0
+  Copyright : National Security Agency
+  Source  : https://github.com/NationalSecurityAgency/Ghidra
+  Note    : Used only via headless mode + ReaGhidraBridge.
+            No Ghidra source is redistributed in this repository.
+
+--------------------------------------------------
+REA / ReaGhidraBridge (A1)
+  License : MIT
+  Attribution retained.
+
+--------------------------------------------------
+Frida (A3)
+  License : wxWindows Library Licence, Version 3.1
+  Source  : https://frida.re
+  Note    : Gadget non-root path for Android targets only.
+            No Frida binaries are redistributed in this repository.
+
+--------------------------------------------------
+Qiling (A3)
+  License : GNU General Public License v2.0 (GPLv2)
+  Source  : https://github.com/qilingframework/qiling
+  Note    : Used for dynamic truth / emulation. No Qiling
+            source or binaries are redistributed in this repository.
+
+--------------------------------------------------
+capa (A4)
+  License : Apache License 2.0
+  Copyright : Mandiant
+  Attribution retained; no binary redistribution.
+
+--------------------------------------------------
+angr (A4)
+  License : BSD-2-Clause
+  Attribution retained; no binary redistribution.
+
+--------------------------------------------------
+Shattered Pixel Dungeon (Baseline Target)
+  License : GNU General Public License v3.0 (GPLv3)
+  Source  : https://github.com/00-Evan/shattered-pixel-dungeon
+  Note    : Used solely as a legal analysis target for formula
+            verification. No SPD source is redistributed.
+
+--------------------------------------------------
+This NOTICE file must accompany any distribution of IrsanAI-A5.
