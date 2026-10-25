@@ -206,7 +206,7 @@ def run_spd_barrier_dr_residual() -> AAPResult:
         "Glyph wrapping of the final value remains intact",
     ]
     weakened = [
-        "Confidence that Barrier always precedes DR drops from \~0.95 (static) to medium",
+        "Confidence that Barrier always precedes DR drops from ~0.95 (static) to medium",
     ]
     killed: List[str] = []
     shifted = [
