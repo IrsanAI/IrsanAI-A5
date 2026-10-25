@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 import http.server, json, pathlib, platform, os, sys, socketserver
 from datetime import datetime, timezone
+from allowlist import ALLOWED, is_allowed
+
 ROOT = pathlib.Path(__file__).parent
 REPO_ROOT = ROOT.parent.parent
 EVIDENCE_DIR = pathlib.Path.home() / "a5_evidence"
@@ -41,8 +43,14 @@ def get_platform():
 def get_metrics():
     return {"ts":datetime.now(timezone.utc).isoformat(),"platform":get_platform(),"frida":get_frida(),"evidence":get_evidence(),"torwart":get_torwart()}
 
+def get_allowed():
+    return ALLOWED
+
 class H(http.server.SimpleHTTPRequestHandler):
     def do_GET(self):
+        if self.path=="/api/allowed":
+            self.send_response(200); self.send_header("Content-Type","application/json"); self.send_header("Access-Control-Allow-Origin","*"); self.end_headers()
+            self.wfile.write(json.dumps(get_allowed()).encode()); return
         if self.path=="/api/metrics":
             self.send_response(200); self.send_header("Content-Type","application/json"); self.send_header("Access-Control-Allow-Origin","*"); self.end_headers()
             self.wfile.write(json.dumps(get_metrics()).encode()); return
