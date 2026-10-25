@@ -1,24 +1,28 @@
-# providers/ – A1 / A3 stubs
+# providers/ – A1 / A3
 
-These are placeholders for the next iteration.
-No live Ghidra / Frida binaries are shipped.
+No live Ghidra or Frida binaries are shipped.
 
 ## A1 – MCP Provider stub
+`a1_mcp_provider_stub.py` – orchestration interface only (ReaGhidraBridge protocol).
 
-`a1_rea_mcp_provider.py` will expose a minimal MCP surface that:
+## A3 – Frida Gadget non-root (Iteration 3)
 
-- accepts a target path
-- invokes ReaGhidraBridge headless (Ghidra 12.1.x + JDK21)
-- returns decompilation artefacts + SHA256
-- never performs decompilation itself (orchestration only)
+`a3_frida_gadget_stub.py`:
 
-## A3 – Frida Gadget non-root stub
+- `non_root_only=True` enforced (root rejected)
+- Optional live path if `frida` Python module + USB device are present
+- Always writes evidence JSON under `$HOME/a5_evidence/`
+- Claims **observed** only when live attach produced hook data; otherwise **inferred**
+- Includes SPD Barrier / DR order probe script template (legal GPLv3 target only)
 
-`a3_frida_gadget_stub.sh` will:
+### Usage
 
-- locate a non-root Frida Gadget for Android
-- inject into a legal target process
-- export basic hooks (open, read, write, SSL)
-- feed observations back into the Evidence-Graph
+```bash
+python3 providers/a3_frida_gadget_stub.py
+# → mode=stub without device; evidence JSON still written
 
-Both stubs remain non-functional until the Maintainer + Reviewer agree on the exact interface.
+python3 torwart/mandatory_inversion.py --i3
+# → partially reframed / 0.72
+
+python3 torwart/mandatory_inversion.py --i3 --live 3
+# → largely survived / 0.88 – only with real observations EOF
