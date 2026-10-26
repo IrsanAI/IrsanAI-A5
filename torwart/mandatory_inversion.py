@@ -169,33 +169,32 @@ def run_spd_barrier_dr_residual_i3(live_observations: int = 0):
     FINDING="spd_barrier_dr_order"
     base = run_spd_barrier_dr_residual()
     if live_observations>0:
-        # FIX v3.1: Nonce ZUERST generieren, DANN zählen
         import random, string
         nonce=''.join(random.choices(string.ascii_letters+string.digits, k=24))
         get_live_nonce_path().parent.mkdir(exist_ok=True)
         get_live_nonce_path().write_text(nonce)
         real = count_real_observed(FINDING)
         print(f"[Torwart v3.1] live_nonce={nonce} local_hash={get_local_target_hash()[:12]}... local_frida={get_local_frida_version()} real_correlated={real}")
-    else:
-        real = count_real_observed(FINDING)
-        print(f"=== Torwart v3.1 – i3 live=0 real={real} local_hash={get_local_target_hash()[:12]}... ===")
-        print(f"[Torwart v3] live_nonce={nonce} local_hash={get_local_target_hash()[:12]}... local_frida={get_local_frida_version()} real_correlated={real}")
         if real>0:
-            print(f"[+] Torwart v3: --live {live_observations} real_correlated_Barrier={real} with local hash match + nonce -> 0.88")
-            base.phase0_intent=f"i3 v3 – {FINDING} – live verified – real={real} correlated Barrier hash+nonce"
-            base.phase0_access_limitations=f"Real APK hash {get_local_target_hash()[:12]}... + device_id + nonce + correlated Barrier absorb in same attack_id – real={real} – 0.88 allowed – implemented"
+            print(f"[+] Torwart v3.1: --live {live_observations} real_correlated_Barrier={real} with local hash match + nonce -> 0.88")
+            base.phase0_intent=f"i3 v3.1 – {FINDING} – live verified – real={real} correlated Barrier hash+nonce"
+            base.phase0_access_limitations=f"Real APK hash {get_local_target_hash()[:12]}... + device_id + nonce + correlated Barrier – real={real} – 0.88 allowed – implemented"
             base.overall_confidence=0.88
             base.survival_assessment="largely survived"
             base.residual=f"Live verified: DR before Barrier, {real} correlated Barrier with local hash match + nonce, fresh <5min"
-            base.method_note=f"AAP v3 live verified – DR before Barrier – {real} correlated hash+nonce"
+            base.method_note=f"AAP v3.1 live verified – DR before Barrier – {real} correlated hash+nonce"
         else:
-            print(f"[!] Torwart v3: --live {live_observations} für {FINDING} – no real correlated Barrier evidence with local hash {get_local_target_hash()[:12]}... + nonce – real={real} – bleibe bei 0.72")
-            base.phase0_intent=f"i3 v3 – {FINDING} – no real correlated Barrier evidence with local hash match – live requested {live_observations} real={real} – not implemented"
-            base.phase0_access_limitations=f"SPD-Live-Verifikation noch nicht implementiert – not implemented – no real correlated evidence with local hash {get_local_target_hash()[:12]}... + nonce – real={real} – 0.72 fail-closed"
+            print(f"[!] Torwart v3.1: --live {live_observations} für {FINDING} – no real correlated – real={real} – bleibe bei 0.72")
+            base.phase0_intent=f"i3 v3.1 – {FINDING} – no real correlated – live requested {live_observations} real={real} – not implemented"
+            base.phase0_access_limitations=f"SPD-Live-Verifikation noch nicht implementiert – not implemented – no real correlated with hash {get_local_target_hash()[:12]}... + nonce – real={real} – 0.72 fail-closed"
             base.overall_confidence=0.72
             base.survival_assessment="partially reframed"
+    else:
+        real = count_real_observed(FINDING)
+        print(f"=== Torwart v3.1 – i3 live=0 real={real} local_hash={get_local_target_hash()[:12]}... ===")
     check_closure_allowed(base)
     return base
+
 
 def main():
     p=argparse.ArgumentParser(); p.add_argument("--i3",action="store_true"); p.add_argument("--live",type=int,default=0); a=p.parse_args()
