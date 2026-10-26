@@ -42,14 +42,17 @@ class AAPResult:
     def to_json(self, indent=2): return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
 def get_local_target_hash() -> str:
-    # Hash des lokal untersuchten Zielartefakts – Char.java (oder APK wenn vorhanden)
-    # Muss mit Evidence binary_sha256 übereinstimmen – verhindert Random-SHA Fake
+    # Einheitlich mit Runner: erst APK, dann Char.java – verhindert Hash-Konflikt (Manus)
+    for apk in pathlib.Path.home().glob("a5_targets/**/*.apk"):
+        if apk.exists():
+            try:
+                import hashlib
+                return hashlib.sha256(apk.read_bytes()).hexdigest()
+            except: pass
     candidates=[
         pathlib.Path.home()/ "[STRIPPED 86 bytes].java",
-        pathlib.Path.home()/ "[STRIPPED 86 bytes].java".replace("a5_targets/spd","a5_targets/spd"),
         pathlib.Path("[STRIPPED 71 bytes].java"),
     ]
-    # zusätzliche Suche
     for cand in list(pathlib.Path.home().glob("a5_targets/**/Char.java")):
         candidates.append(cand)
     for p in candidates:
@@ -64,9 +67,32 @@ def get_local_target_hash() -> str:
 def get_local_frida_version() -> str:
     try:
         import frida
-        return getattr(frida, "__version__", "unknown")
-    except:
-        return "unknown"
+        v=getattr(frida, "__version__", "unknown")
+        if v!="unknown": return v
+    except: pass
+    try:
+        import subprocess
+        out=subprocess.check_output(["frida","--version"], text=True).strip()
+        if out: return out
+    except: pass
+    return "unknown"
+
+def get_expected_device_id() -> str:
+    try:
+        import subprocess, platform
+        out=subprocess.check_output(["getprop","ro.serialno"], text=True).strip()
+        if out: return out
+    except: pass
+    try:
+        import subprocess, platform
+        out=subprocess.check_output(["getprop","ro.product.model"], text=True).strip()
+        if out:
+            import platform as pl
+            return out+"-"+pl.node()
+    except: pass
+    import platform as pl
+    return pl.node() or "unknown-device"
+
 
 def get_live_nonce_path():
     return pathlib.Path.home()/ "a5_evidence/.live_nonce"

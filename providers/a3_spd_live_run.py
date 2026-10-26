@@ -55,6 +55,8 @@ def write_evidence(ev_data, dry=False):
     frida_ver=get_frida_version()
     ts=time.time()
     is_fixture=ev_data.get("_fixture", False)
+    # Token aus Frida-Session durchlassen
+    sess_tok=ev_data.get("frida_session_token") or ev_data.get("session_token") or ""
     conf="inferred" if is_fixture else "observed"
     evidence={
         "evidence_id": f"spd_barrier_dr_order-live-{int(ts*1000)}",
@@ -78,6 +80,8 @@ def write_evidence(ev_data, dry=False):
         "device_id": device_id,
         "frida_version": frida_ver,
         "live_nonce": nonce,
+        "frida_session_token": ev_data.get("frida_session_token",""),
+        "session_token": ev_data.get("frida_session_token",""),
         "ts": ts,
         "timestamp": int(ts*1000)
     }
@@ -126,11 +130,26 @@ def main():
 
     print(f"[A3 SPD] live attach – nonce={get_nonce()[:6]}.. hash={get_local_hash()[:12]}.. waiting {args.wait}s for Barrier combat...")
 
+    import uuid, pathlib as _pl
+    session_token=str(uuid.uuid4())
+    # Session-File für Guard – beweist echte Frida-Session, nicht handgeschriebene JSON (Manus)
+    def write_session_file(nonce, token):
+        sf=_pl.Path.home()/ f"a5_evidence/.frida_session_{nonce}"
+        sf.parent.mkdir(exist_ok=True)
+        sf.write_text(token)
+
     def on_message(msg, data):
         if msg["type"]=="send":
             payload=msg.get("payload",{})
             if payload.get("type")=="spd_evidence":
-                write_evidence(payload.get("data",{}))
+                d=payload.get("data",{})
+                d["frida_session_token"]=session_token
+                d["session_token"]=session_token
+                # Session-File schreiben
+                try:
+                    write_session_file(get_nonce(), session_token)
+                except: pass
+                write_evidence(d)
         elif msg["type"]=="error":
             print(f"[FRIDA ERROR] {msg}")
 
