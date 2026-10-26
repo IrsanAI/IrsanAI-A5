@@ -1,65 +1,36 @@
-#!/usr/bin/env python3
-from __future__ import annotations
-from dataclasses import dataclass, field, asdict
-from typing import List, Dict, Any
-import json, argparse, pathlib, time, hashlib, os, random, string
-from datetime import datetime, timezone
 
-@dataclass
-class RivalExplanation:
-    text: str
-    changes_diagnosis: bool = True
+import pathlib, time, json, hashlib, os
 
-@dataclass
-class AAPResult:
-    phase0_intent: str
-    phase0_access_limitations: str
-    phase0_residual_uncertainty: str
-    phase1_incident: str
-    phase1_patterns: List[str]
-    phase1_architecture: str
-    phase1_higher_order_cause: str
-    phase1_rivals: List[RivalExplanation]
-    phase1_levers: List[str]
-    phase1_strategy: str
-    phase2_inversion: str
-    phase3_survived: List[str]
-    phase3_weakened: List[str]
-    phase3_killed: List[str]
-    phase3_shifted: List[str]
-    phase4_changeable: List[str]
-    phase4_resistant: List[str]
-    phase4_residual_levers: List[str]
-    stress_tested_diagnosis: str
-    survival_assessment: str
-    residual: str
-    overall_confidence: float
-    boundary_map: Dict[str, Any]
-    method_note: str
-    timestamp: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
-    def to_dict(self):
-        d=asdict(self); d["phase1_rivals"]=[asdict(r) for r in self.phase1_rivals]; return d
-    def to_json(self, indent=2): return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
+def get_live_nonce_path():
+    return pathlib.Path.home() / "a5_evidence" / ".live_nonce"
 
 def get_local_target_hash() -> str:
-    # Einheitlich mit Runner: erst APK, dann Char.java – verhindert Hash-Konflikt (Manus)
-    import hashlib, pathlib
+    # Production v3.3: APK-first streaming SHA (1MiB chunks) – OOM safe
+    import pathlib, hashlib
     for apk in pathlib.Path.home().glob("a5_targets/**/*.apk"):
         if apk.exists():
             try:
-                return hashlib.sha256(apk.read_bytes()).hexdigest()
+                h=hashlib.sha256()
+                with apk.open('rb') as f:
+                    for chunk in iter(lambda: f.read(1024*1024), b''):
+                        h.update(chunk)
+                return h.hexdigest()
             except:
                 pass
     candidates=[
-        pathlib.Path.home()/ "[STRIPPED 86 bytes].java",
-        pathlib.Path("[STRIPPED 71 bytes].java"),
+        pathlib.Path.home()/ "a5_targets/spd/core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/Char.java",
+        pathlib.Path("core/src/main/java/com/shatteredpixel/shatteredpixeldungeon/actors/Char.java"),
     ]
     for cand in list(pathlib.Path.home().glob("a5_targets/**/Char.java")):
         candidates.append(cand)
     for c in candidates:
         try:
             if c.exists():
-                return hashlib.sha256(c.read_bytes()).hexdigest()
+                h=hashlib.sha256()
+                with c.open('rb') as f:
+                    for chunk in iter(lambda: f.read(1024*1024), b''):
+                        h.update(chunk)
+                return h.hexdigest()
         except:
             pass
     return "no-target-found"
@@ -79,175 +50,104 @@ def get_local_frida_version() -> str:
 
 def get_expected_device_id() -> str:
     try:
-        import subprocess, platform
+        import subprocess
         out=subprocess.check_output(["getprop","ro.serialno"], text=True).strip()
         if out: return out
     except: pass
     try:
-        import subprocess, platform
+        import subprocess, platform as pl
         out=subprocess.check_output(["getprop","ro.product.model"], text=True).strip()
         if out:
-            import platform as pl
             return out+"-"+pl.node()
     except: pass
     import platform as pl
     return pl.node() or "unknown-device"
 
-
-def get_live_nonce_path():
-    return pathlib.Path.home()/ "a5_evidence/.live_nonce"
-
-def get_current_live_nonce():
-    p=get_live_nonce_path()
-    if p.exists():
-        try: return p.read_text().strip()
-        except: return None
-    return None
-
-def count_real_observed(finding_id: str = "spd_barrier_dr_order") -> int:
-    if finding_id != "spd_barrier_dr_order":
-        return 0
-    ev_dir = pathlib.Path.home() / "a5_evidence"
+def count_real_observed(finding_id="spd_barrier_dr_order") -> int:
+    ev_dir=pathlib.Path.home() / "a5_evidence"
     if not ev_dir.exists(): return 0
     local_hash=get_local_target_hash()
-    local_frida=get_local_frida_version()
-    live_nonce=get_current_live_nonce()
-    cnt=0
+    if local_hash=="no-target-found":
+        return 0
+    exp_dev=get_expected_device_id()
+    exp_fr=get_local_frida_version()
     now=time.time()
-    for f in ev_dir.glob("*.json"):
+    count=0
+    for fp in ev_dir.glob("*.json"):
         try:
-            j=json.loads(f.read_text(encoding="utf-8")[:12000])
-            if j.get("finding_id")!=finding_id: continue
-            if j.get("provider")!="a3_frida": continue
-            if j.get("target")!="spd": continue
-            if j.get("confidence")!="observed": continue
-            if not j.get("correlated"): continue
-            obs=j.get("observed",{})
-            bclass=obs.get("barrier_class") or obs.get("buffType") or ""
-            if "Barrier" not in bclass: continue
-            if obs.get("barrier_absorb_value") is None: continue
-            if obs.get("dr_roll") is None and obs.get("dr_min") is None: continue
-            if obs.get("damage_roll") is None: continue
-            if obs.get("order")!="dr_before_barrier": continue
-            if obs.get("attack_id") is None: continue
-            # Manus Edge: ohne live_nonce darf nichts als real zählen
-            if not j.get("live_nonce"): continue
-            # Manus Fix: Fixture darf nie als real zählen
-            if j.get("fixture"): continue
-            if j.get("confidence")!="observed": continue
-            # Device/Frida müssen echt sein – kein localhost / unknown aus --fixture
-            dev=j.get("device_id") or ""
-            if "localhost" in dev: continue
-            fr=j.get("frida_version") or ""
-            if fr=="unknown" or not fr: continue
-            if not j.get("live_nonce"): continue
-            # SHA muss lokal berechnetem Hash entsprechen – blockt Random-64-char Fake (Manus)
-            sha=j.get("binary_sha256") or ""
-            if sha != local_hash: continue
-            # Frida Version muss echter lokaler Version entsprechen
-            frida_v=j.get("frida_version") or ""
-            if local_frida!="unknown" and frida_v!=local_frida: continue
-            # Device-ID muss vorhanden sein und nicht Fallback, und Nonce muss passen wenn live run aktiv
-            dev=j.get("device_id") or ""
-            if not dev or "fallback" in dev or "needs-real" in dev: continue
-            # Nonce Check – Evidence muss live_nonce aus aktuellem Run enthalten, blockt frei erzeugte JSON ohne Runner
-            if live_nonce:
-                if j.get("live_nonce")!=live_nonce: continue
-            else:
-                # wenn kein live run aktiv, darf Evidence nicht als real zählen – verhindert alte Fake Files
-                # Ausnahme: wenn Evidence <5min und frisch, aber ohne nonce -> noch blocken für SPD
-                # Für SPD fordern wir immer nonce wenn live_observations>0
-                pass
+            j=json.loads(fp.read_text())
+        except: continue
+        if j.get("finding_id")!=finding_id: continue
+        if j.get("provider")!="a3_frida": continue
+        if j.get("target")!="spd": continue
+        if j.get("confidence")!="observed": continue
+        if not j.get("correlated"): continue
+        if j.get("fixture"): continue
+        if not j.get("live_nonce"): continue
+        # v3.3 crisis-proof
+        src=j.get("source") or j.get("origin") or ""
+        if src!="frida_js": continue
+        token=j.get("frida_session_token") or j.get("session_token") or ""
+        if not token: continue
+        sess_file=pathlib.Path.home() / f"a5_evidence/.frida_session_{j.get('live_nonce')}"
+        if not sess_file.exists(): continue
+        try:
+            if sess_file.read_text().strip()!=token: continue
+        except: continue
+        # mtime ±2s, age <30s
+        try:
+            sess_mtime=sess_file.stat().st_mtime
+            ev_mtime=fp.stat().st_mtime
+            if abs(ev_mtime - sess_mtime) > 2.5: continue
+            if now - sess_mtime > 30: continue
+            if now - ev_mtime > 30: continue
             ts=j.get("ts") or j.get("timestamp") or 0
-            if ts>1e12: ts=ts/1000
-            if now - float(ts) > 300: continue  # 5min Frische statt 24h – blockt Replay
-            cnt+=1
-        except: pass
-    return cnt
+            if ts>1e12: ts/=1000
+            if abs(now - float(ts)) > 30: continue
+        except: continue
+        dev=j.get("device_id") or ""
+        if "localhost" in dev: continue
+        if dev=="unknown-device": continue
+        if dev!=exp_dev: continue
+        fr=j.get("frida_version") or ""
+        if fr=="unknown" or not fr: continue
+        if fr=="unknown-device": continue
+        if exp_fr!="unknown" and fr!=exp_fr: continue
+        sha=j.get("binary_sha256") or ""
+        if not sha: continue
+        if sha!=local_hash: continue
+        if sha=="no-target-found": continue
+        obs=j.get("observed") or {}
+        if not obs.get("barrier_absorb_value"): continue
+        if obs.get("order")!="dr_before_barrier": continue
+        if "Barrier" not in (obs.get("barrier_class") or ""): continue
+        if not obs.get("attack_id"): continue
+        count+=1
+    return count
 
-def check_closure_allowed(r: AAPResult):
-    if r.overall_confidence > 0.8:
-        if "not implemented" in r.phase0_access_limitations.lower() and count_real_observed("spd_barrier_dr_order")==0:
-            raise Exception("Closure blocked: still marked not implemented and no real correlated Barrier evidence")
-        if count_real_observed("spd_barrier_dr_order")==0:
-            raise Exception("Closure blocked: 0.88 requires real correlated Barrier evidence with local APK hash match + nonce")
-    if r.phase0_residual_uncertainty=="high" and r.overall_confidence>0.7:
-        raise Exception("Closure blocked: high residual must be <=0.7")
-    return True
-
-def run_spd_barrier_dr_residual():
+def run_spd_barrier_dr_residual(live=0):
+    # production wording, no demo
+    real=count_real_observed()
+    base_conf=0.72
     local_hash=get_local_target_hash()[:12]
-    return AAPResult(
-        "SPD Barrier vs DR – static DR before Barrier, live not yet verified",
-        f"SPD-Live-Verifikation noch nicht implementiert – not implemented – Static: Char.java 390 drRoll before 415 damageRoll, 483 defenseProc max(eff-dr) before 987 processDamage. Local target hash {local_hash}... – need real Frida Runner with send() + nonce + local hash match. Fail-closed 0.72.",
-        "medium",
-        "Static: DR before Barrier – needs live correlated verification with local hash",
-        ["Barrier Buff absorb","DR Normal roll","ShieldBuff.processDamage"],
-        "Char.attack: attack() -> drRoll (390) -> damageRoll (415) -> defenseProc -> max(eff-dr) -> damage -> processDamage -> absorbDamage",
-        "DR before Barrier (static, plausible, attack()-bound)",
-        [RivalExplanation("order irrelevant",True), RivalExplanation("glyph re-introduces",True)],
-        ["Real APK + Gadget + Runner that validates hash + nonce","Per-attack hook from attack() with reset","Verifier checks local hash + frida_version + nonce + freshness 5min"],
-        "Keep 0.72 until real SPD Frida run with correlated Barrier absorb in same attack_id, local hash match",
-        "Barrier NOT before DR – DR first",
-        ["Raw roll formula intact","DR before Barrier static"],["Confidence medium – needs live"],[],["Need SPD runtime with Frida correlated + send()"],
-        ["Build SPD APK","Real Frida runner with hash compare"],["Source fixed upstream"],
-        ["Frida SPD hook must start at attack() and capture drRoll BEFORE damageRoll in same attack_id, Barrier-only, send() to runner, reset"],
-        f"Static DR before Barrier plausible, Char.java drRoll 390 before damageRoll 415, ShieldBuff.java processDamage after DR. Local hash {local_hash}... Live needs per-attack correlated Barrier with local hash + nonce.",
-        "partially reframed",
-        f"Static DR before Barrier plausible – 0.72 fail-closed – 0.88 requires local hash {local_hash}... match + frida_version + device_id + attack_id + nonce + 5min freshness",
-        0.72,
-        {"changeable":["Real APK + per-attack hook with hash + nonce"]},
-        "AAP v2.2 FINAL HONEST – SPD static DR before Barrier, live pending hash+nonce, fail-closed 0.72"
-    )
-
-def run_spd_barrier_dr_residual_i3(live_observations: int = 0):
-    FINDING="spd_barrier_dr_order"
-    base = run_spd_barrier_dr_residual()
-    if live_observations>0:
-        import random, string, time, os
-        # Nonce-Reuse ≤5min – sonst würde Runner-Evidence sofort invalidiert
-        np=get_live_nonce_path()
-        nonce=None
-        if np.exists():
-            try:
-                age=time.time()-np.stat().st_mtime
-                if age<=300:
-                    nonce=np.read_text().strip()
-            except: pass
-        if not nonce:
-            nonce=''.join(random.choices(string.ascii_letters+string.digits, k=24))
-            np.parent.mkdir(exist_ok=True)
-            np.write_text(nonce)
-        real = count_real_observed(FINDING)
-        print(f"[Torwart v3.1] live_nonce={nonce} local_hash={get_local_target_hash()[:12]}... local_frida={get_local_frida_version()} real_correlated={real}")
-        if real>0:
-            print(f"[+] Torwart v3.1: --live {live_observations} real_correlated_Barrier={real} with local hash match + nonce -> 0.88")
-            base.phase0_intent=f"i3 v3.1 – {FINDING} – live verified – real={real} correlated Barrier hash+nonce"
-            base.phase0_access_limitations=f"Real APK hash {get_local_target_hash()[:12]}... + device_id + nonce + correlated Barrier – real={real} – 0.88 allowed – implemented"
-            base.overall_confidence=0.88
-            base.survival_assessment="largely survived"
-            base.residual=f"Live verified: DR before Barrier, {real} correlated Barrier with local hash match + nonce, fresh <5min"
-            base.method_note=f"AAP v3.1 live verified – DR before Barrier – {real} correlated hash+nonce"
+    local_frida=get_local_frida_version()
+    nonce_path=get_live_nonce_path()
+    nonce_age="-"
+    try:
+        if nonce_path.exists():
+            nonce_age=f"{int(time.time()-nonce_path.stat().st_mtime)}s"
+    except: pass
+    if live==0:
+        print(f"=== Torwart v3.3 – i3 live=0 real={real} local_hash={local_hash}... ===")
+        return {"finding_id":"spd_barrier_dr_order","confidence":base_conf,"mode":"production","reason":"awaiting live attestation"}
+    else:
+        print(f"[Torwart v3.3] live_nonce={nonce_path.read_text()[:8] if nonce_path.exists() else '-'} local_hash={local_hash}... local_frida={local_frida} real_correlated={real}")
+        if real==0:
+            print(f"[!] Torwart v3.3: --live 1 für spd_barrier_dr_order – no real correlated – real=0 – bleibe bei 0.72")
+            return {"finding_id":"spd_barrier_dr_order","confidence":0.72,"mode":"production","real":real}
         else:
-            print(f"[!] Torwart v3.1: --live {live_observations} für {FINDING} – no real correlated – real={real} – bleibe bei 0.72")
-            base.phase0_intent=f"i3 v3.1 – {FINDING} – no real correlated – live requested {live_observations} real={real} – not implemented"
-            base.phase0_access_limitations=f"SPD-Live-Verifikation noch nicht implementiert – not implemented – no real correlated with hash {get_local_target_hash()[:12]}... + nonce – real={real} – 0.72 fail-closed"
-            base.overall_confidence=0.72
-            base.survival_assessment="partially reframed"
-    else:
-        real = count_real_observed(FINDING)
-        print(f"=== Torwart v3.1 – i3 live=0 real={real} local_hash={get_local_target_hash()[:12]}... ===")
-    check_closure_allowed(base)
-    return base
+            print(f"[+] Torwart v3.3: ATTESTED LIVE – real={real} → 0.88")
+            return {"finding_id":"spd_barrier_dr_order","confidence":0.88,"mode":"production","real":real}
 
-
-def main():
-    p=argparse.ArgumentParser(); p.add_argument("--i3",action="store_true"); p.add_argument("--live",type=int,default=0); a=p.parse_args()
-    if a.i3:
-        r=run_spd_barrier_dr_residual_i3(a.live)
-        print(f"=== Torwart v3 – i3 live={a.live} real_correlated={count_real_observed()} local_hash={get_local_target_hash()[:12]}... ===\n")
-    else:
-        r=run_spd_barrier_dr_residual()
-    print(r.to_json()); print(f"\n--- {r.survival_assessment} {r.overall_confidence} ---\n{r.residual}")
-
-if __name__=="__main__": main()
+def run_spd_barrier_dr_residual_i3(live):
+    return run_spd_barrier_dr_residual(live)
