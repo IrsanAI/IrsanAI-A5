@@ -1,10 +1,16 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: Apache-2.0
-# A3 SPD Live Runner – hook v3 send(spd_evidence) -> Guard-complete JSON
+# A3 SPD Live Runner v5 – Fixture=inferred (nie 0.88), Live=attach+hook v3 send(spd_evidence)
 from __future__ import annotations
 import pathlib, json, time, hashlib, platform, subprocess, sys, argparse
 
 def get_local_hash():
+    # 1. APK bevorzugt (echter laufender Hash), sonst Char.java
+    for p in pathlib.Path.home().glob("a5_targets/**/*.apk"):
+        if p.exists():
+            try:
+                return hashlib.sha256(p.read_bytes()).hexdigest()
+            except: pass
     for p in pathlib.Path.home().glob("a5_targets/**/Char.java"):
         if p.exists():
             return hashlib.sha256(p.read_bytes()).hexdigest()
@@ -36,7 +42,6 @@ def get_nonce():
     np=pathlib.Path.home()/ "a5_evidence/.live_nonce"
     if np.exists():
         return np.read_text().strip()
-    # fallback generate
     import random, string
     nonce=''.join(random.choices(string.ascii_letters+string.digits, k=24))
     np.parent.mkdir(exist_ok=True)
@@ -49,12 +54,15 @@ def write_evidence(ev_data, dry=False):
     device_id=get_device_id()
     frida_ver=get_frida_version()
     ts=time.time()
+    is_fixture=ev_data.get("_fixture", False)
+    conf="inferred" if is_fixture else "observed"
     evidence={
         "evidence_id": f"spd_barrier_dr_order-live-{int(ts*1000)}",
         "provider": "a3_frida",
         "target": "spd",
         "finding_id": "spd_barrier_dr_order",
-        "confidence": "observed",
+        "confidence": conf,
+        "fixture": is_fixture,
         "correlated": True,
         "observed": {
             "barrier_absorb_value": ev_data.get("absorbed", ev_data.get("barrier_absorb_value", 1)),
@@ -74,44 +82,50 @@ def write_evidence(ev_data, dry=False):
         "timestamp": int(ts*1000)
     }
     out_path=pathlib.Path.home()/ f"a5_evidence/spd_barrier_dr_order-live-{int(ts*1000)}.json"
-    if dry:
-        print(f"[DRY] would write {out_path}\n{json.dumps(evidence, indent=2)[:800]}")
+    if dry or is_fixture:
+        # Fixture darf nie als echte Evidence zählen – Guard blockt inferred/fixture/localhost/unknown
+        if dry:
+            print(f"[DRY] would write {out_path}")
+        else:
+            print(f"[FIXTURE] writing inferred fixture {out_path} (will stay 0.72)")
+        out_path.parent.mkdir(exist_ok=True)
+        out_path.write_text(json.dumps(evidence, indent=2))
         return evidence
     out_path.parent.mkdir(exist_ok=True)
     out_path.write_text(json.dumps(evidence, indent=2))
-    print(f"[A3 SPD] wrote {out_path} nonce={nonce[:6]}.. hash={local_hash[:12]}.. dev={device_id} frida={frida_ver}")
+    print(f"[A3 SPD LIVE] wrote {out_path} nonce={nonce[:6]}.. hash={local_hash[:12]}.. dev={device_id} frida={frida_ver}")
     return evidence
 
 def main():
     ap=argparse.ArgumentParser()
-    ap.add_argument("--wait", type=int, default=60, help="seconds to wait for send()")
+    ap.add_argument("--wait", type=int, default=60)
     ap.add_argument("--dry-run", action="store_true")
-    ap.add_argument("--fixture", action="store_true", help="write one fixture evidence for integration test")
+    ap.add_argument("--fixture", action="store_true")
     args=ap.parse_args()
 
-    if args.fixture or args.dry_run:
-        fake={"absorbed":5,"drRoll":3,"damageRoll":10,"attackId":1,"buffType":"com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier","incomingDmg":10,"leftover":2}
-        write_evidence(fake, dry=args.dry_run)
+    if args.dry_run:
+        fake={"absorbed":5,"drRoll":3,"damageRoll":10,"attackId":1,"buffType":"...Barrier","incomingDmg":10,"leftover":2, "_fixture": True}
+        write_evidence(fake, dry=True)
+        return
+    if args.fixture:
+        fake={"absorbed":5,"drRoll":3,"damageRoll":10,"attackId":1,"buffType":"com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier","incomingDmg":10,"leftover":2, "_fixture": True}
+        write_evidence(fake, dry=False)
         return
 
-    # Real Frida path – requires frida, device/emulator with SPD APK + Gadget
     try:
         import frida
     except Exception as e:
-        print(f"[!] frida python module not found ({e}) – use --fixture for dry test")
+        print(f"[!] frida module missing {e} – use --fixture")
         sys.exit(1)
 
     hook_path=pathlib.Path("providers/frida_spd_barrier_dr.js")
     if not hook_path.exists():
-        print(f"[!] hook not found {hook_path}")
+        print(f"[!] hook missing {hook_path}")
         sys.exit(1)
     hook_code=hook_path.read_text()
 
-    print(f"[A3 SPD] waiting for send() – hook v3 – nonce={get_nonce()[:6]}.. hash={get_local_hash()[:12]}..")
-    print(f"[A3 SPD] start SPD combat with Barrier buff now, {args.wait}s window...")
+    print(f"[A3 SPD] live attach – nonce={get_nonce()[:6]}.. hash={get_local_hash()[:12]}.. waiting {args.wait}s for Barrier combat...")
 
-    # Simplified: attach to SPD – user must adapt package name
-    # This is template for Termux frida -U
     def on_message(msg, data):
         if msg["type"]=="send":
             payload=msg.get("payload",{})
@@ -120,17 +134,47 @@ def main():
         elif msg["type"]=="error":
             print(f"[FRIDA ERROR] {msg}")
 
-    # Example attach – will be adapted by user for real APK
-    # device=frida.get_usb_device(timeout=5)
-    # pid=device.spawn(["com.shatteredpixel.shatteredpixeldungeon"])
-    # session=device.attach(pid)
-    # script=session.create_script(hook_code)
-    # script.on("message", on_message)
-    # script.load()
-    # device.resume(pid)
-    # time.sleep(args.wait)
+    try:
+        device=frida.get_usb_device(timeout=5)
+    except:
+        try:
+            device=frida.get_local_device()
+        except Exception as e:
+            print(f"[!] no device {e}")
+            sys.exit(1)
 
-    print("[A3 SPD] template ready – implement attach for your SPD build, hook already sends via send()")
+    # Versuche SPD zu finden/spawnen – Paketname anpassbar
+    pkg="com.shatteredpixel.shatteredpixeldungeon"
+    try:
+        pid=device.spawn([pkg])
+        session=device.attach(pid)
+        script=session.create_script(hook_code)
+        script.on("message", on_message)
+        script.load()
+        device.resume(pid)
+        print(f"[A3 SPD] spawned {pkg} pid={pid}, hook v3 loaded – trigger Barrier combat now")
+        time.sleep(args.wait)
+    except Exception as e:
+        print(f"[!] spawn failed {e} – trying attach to running")
+        try:
+            # attach zu laufendem Prozess
+            apps=device.enumerate_applications()
+            target=None
+            for a in apps:
+                if pkg in a.identifier:
+                    target=a
+                    break
+            if target and target.pid:
+                session=device.attach(target.pid)
+                script=session.create_script(hook_code)
+                script.on("message", on_message)
+                script.load()
+                print(f"[A3 SPD] attached to {pkg} pid={target.pid}, waiting {args.wait}s")
+                time.sleep(args.wait)
+            else:
+                print("[!] SPD not running, start manually")
+        except Exception as e2:
+            print(f"[!] attach failed {e2}")
 
 if __name__=="__main__":
     main()
