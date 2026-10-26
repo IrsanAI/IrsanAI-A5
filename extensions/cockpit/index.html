@@ -1,0 +1,37 @@
+<!DOCTYPE html><html><head><meta charset=utf-8><title>A5 Pro – Production</title>
+<style>body{background:#0a0f14;color:#e6f1ff;font-family:JetBrains Mono,monospace;margin:0}
+.hud{display:flex;gap:12px;padding:12px;background:#101a23;border-bottom:1px solid #00d4ff33}
+.badge{padding:4px 8px;border:1px solid #00d4ff66;border-radius:6px;font-size:12px}
+.prog{height:8px;background:#1a2a36;border-radius:4px;overflow:hidden;margin:12px}
+.fill{height:100%;width:72%;background:linear-gradient(90deg,#00d4ff,#7a5cff)}
+.card{background:#111c27;border:1px solid #1e344a;border-radius:12px;padding:16px;margin:12px}
+.ok{color:#00ffa6}.warn{color:#ffb84d}
+</style></head><body>
+<div class="hud">
+<span class="badge" id="hash">local_hash 8d372e8ecdd2</span>
+<span class="badge" id="dev">device awaiting</span>
+<span class="badge" id="fr">frida awaiting</span>
+<span class="badge" id="nonce">nonce_age -</span>
+<span class="badge warn">0.72 SECURE – AWAITING LIVE ATTESTATION</span>
+</div>
+<div class="prog"><div class="fill"></div></div>
+<div class="card"><h3>SPD Barrier vs DR – Production Attestation</h3>
+<p>Flow: drRoll (Char.java:390) → damageRoll (415) → ShieldBuff.absorbDamage → Barrier-only</p>
+<p id="real">real_correlated=0 → confidence 0.72 fail-closed (secure by default)</p>
+<p class="ok">Guard v3.3 crisis-proof: source==frida_js, Java UUID.randomUUID() in target, token match, mtime±2s, age<30s, APK-first streaming SHA, exact device+frida, fixture blocked.</p>
+</div>
+<div class="card"><h4>Live Unlock Path (Production)</h4>
+<pre>python -m torwart.mandatory_inversion --i3 --live 1
+python providers/a3_spd_live_run.py   # USB device with Frida Gadget, Barrier combat
+python -m torwart.mandatory_inversion --i3 --live 1  # → 0.88 ATTESTED</pre>
+</div>
+<script>
+fetch('/api/status').then(r=>r.json()).then(s=>{
+ document.getElementById('hash').textContent='local_hash '+ (s.local_hash||'8d372e8e')
+ document.getElementById('dev').textContent='device '+ (s.device||'awaiting')
+ document.getElementById('fr').textContent='frida '+ (s.frida||'awaiting')
+ document.getElementById('nonce').textContent='nonce_age '+ (s.nonce_age||'-')
+ document.getElementById('real').textContent='real_correlated='+(s.real_count||0)+' → '+(s.real_count?'0.88 ATTESTED':'0.72 SECURE')
+}).catch(()=>{})
+</script>
+</body></html>

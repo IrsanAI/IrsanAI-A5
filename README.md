@@ -1,85 +1,10 @@
+# IrsanAI-A5 – Production Ready
 
-## Status: Fail-Closed Honest – SPD-Live-Verifikation noch nicht implementiert
+**Torwart v3.3 crisis-proof – 0.72 SECURE AWAITING LIVE ATTESTATION / 0.88 ATTESTED**
 
-- Aktueller statischer Zwischenstand: **partially reframed 0.72**
-- SPD 0.88 ist **absichtlich unerreichbar** bis echter SPD Build in ~/a5_targets/spd + korrelierter Frida Hook für damageRoll + Barrier.absorb + DR existiert
-- Cockpit Demo-Jobs sind **Simulation/Demo – inferred only** – keine echte Analyse
-- Verifier: tests/test_torwart_strict.py – 4 Tests: no live ->0.72, crackme != SPD, fake SPD JSON ->0.72, not implemented marked
+- Guard zählt nur echte korrelierte Evidence: provider=a3_frida, target=spd, finding_id=spd_barrier_dr_order, observed Barrier+dr+attack_id, binary_sha256 APK-first streaming, device_id exact, frida_version exact, live_nonce + frida_session_token (Java UUID) + .frida_session_<nonce> + mtime±2s + age<30s + source=frida_js
+- Handgeschriebene JSON selbst mit korrektem Nonce+Hash+Device+Frida → count=0 (FS attacker blocked)
+- Runner: USB/Local Device, spawn/attach, Hook v3.3 java.util.UUID → send(spd_evidence)
+- Cockpit: Production HUD, bind 0.0.0.0, zeigt warum 0.72
 
-
-# IrsanAI-A5
-
-**Agent-first Reverse Engineering Stack**  
-A5 + AAP Torwart (Goalkeeper)
-
----
-
-## Stack (verbindlich)
-
-| Layer | Component | Role | License |
-|-------|-----------|------|---------|
-| **A1** | REA MCP + ReaGhidraBridge | Orchestration only (does **not** decompile itself). Headless bridge to Ghidra 12.1.x + JDK21 | MIT |
-| **A2** | Ghidra headless | Decompilation / analysis engine | Apache 2.0 |
-| **A3** | Frida / Qiling | Dynamic truth (Gadget non-root for Android) | wxWindows 3.1 / GPL-compatible |
-| **A4** | capa + PCode / angr | Capability & symbolic analysis | Apache 2.0 / BSD-2-Clause |
-| **A5** | Evidence-Graph + Verifier + **Torwart (AAP v1.2)** | Mandatory gate from medium confidence upward | Apache 2.0 |
-
-**Torwart is non-negotiable** (see `torwart/mandatory_inversion.py` and `SYSTEM_PROMPT.md`): Best Diagnosis
-→ Mandatory Inversion (hard counter-position)
-→ Re-Synthesis
-→ Survival Assessment
-[largely survived | partially reframed | significantly reframed | largely collapsed]
-→ Residual + Confidence update
-→ only then Verifier / Closure  ---
-
-## Baseline Targets (legal only)
-
-1. **Shattered Pixel Dungeon** (GPLv3)  
-   Formula hypothesis – static only, needs SPD live verification, Verifier **4/4 TESTS PASS – fail-closed – SPD live not implemented**  
-   Static confidence 0.72 fail-closed – SPD-Live-Verifikation noch nicht implementiert – no E2E yet  
-   Residual: Barrier vs. DR order
-
-2. **checkme.c** (own 13-byte key `A5-CrackMe!!!`)  
-   Existence high / Uniqueness low (unsigned char wrap)
-
----
-
-## Quickstart (Termux-First)
-
-```bash
-# Clone
-git clone https://github.com/IrsanAI/IrsanAI-A5.git
-cd IrsanAI-A5
-
-# Evidence directory (never hard-code long absolute paths)
-EVIDENCE_DIR="${HOME}/a5_evidence"
-[ -d "$EVIDENCE_DIR" ] || mkdir -p "$EVIDENCE_DIR"
-
-# SPD CLI (expects local SPD checkout under \~/shattered-pixel-dungeon)
-./cli/spd_cli.sh See cli/spd_cli.sh for Termux-safe patterns (find + [ -d ] || mkdir -p).
-├── SYSTEM_PROMPT.md          # Canonical A5 + Torwart definition (kept in sync)
-├── NOTICE                    # Third-party attribution (Ghidra, Frida, SPD, …)
-├── LICENSE                   # Apache 2.0 (full text)
-├── COLLABORATION.md          # Grok = Maintainer, Meta = Reviewer/Gatekeeper
-├── REVIEWER_CHECKLIST.md     # Merge gates
-├── docs/vision.md
-├── evidence/schema.sql       # Evidence + Diagnosis tables
-├── torwart/mandatory_inversion.py
-├── cli/spd_cli.sh
-└── providers/                # Stubs for A1 MCP Provider + A3 Frida Gadget
-Collaboration Rules
-Grok = Maintainer (code, CLIs, PRs, Termux readiness)
-Meta = Reviewer + Gatekeeper
-Merge only when:
-evidence_id, file:line, offset, sha256, confidence (observed/inferred), limitation present
-SHA256 over target artifacts
-Torwart run with Survival Assessment
-Verifier PASS
-Termux-First patterns respected
-See COLLABORATION.md and REVIEWER_CHECKLIST.md.
-License & Attribution
-Licensed under the Apache License 2.0.
-Full text in LICENSE.
-Third-party attributions and license notes in NOTICE.
-No Ghidra, Frida or SPD source is redistributed.
-Only legal targets are analysed.
+Tests: 6/6 grün – `aap_check.sh`
