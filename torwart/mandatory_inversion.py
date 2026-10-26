@@ -169,10 +169,20 @@ def run_spd_barrier_dr_residual_i3(live_observations: int = 0):
     FINDING="spd_barrier_dr_order"
     base = run_spd_barrier_dr_residual()
     if live_observations>0:
-        import random, string
-        nonce=''.join(random.choices(string.ascii_letters+string.digits, k=24))
-        get_live_nonce_path().parent.mkdir(exist_ok=True)
-        get_live_nonce_path().write_text(nonce)
+        import random, string, time, os
+        # Nonce-Reuse ≤5min – sonst würde Runner-Evidence sofort invalidiert
+        np=get_live_nonce_path()
+        nonce=None
+        if np.exists():
+            try:
+                age=time.time()-np.stat().st_mtime
+                if age<=300:
+                    nonce=np.read_text().strip()
+            except: pass
+        if not nonce:
+            nonce=''.join(random.choices(string.ascii_letters+string.digits, k=24))
+            np.parent.mkdir(exist_ok=True)
+            np.write_text(nonce)
         real = count_real_observed(FINDING)
         print(f"[Torwart v3.1] live_nonce={nonce} local_hash={get_local_target_hash()[:12]}... local_frida={get_local_frida_version()} real_correlated={real}")
         if real>0:
