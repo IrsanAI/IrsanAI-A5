@@ -1,74 +1,28 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A5 LIVE COCKPIT</title><style>:root{--bg:#0a0f14;--card:#111a22;--neon:#00ff88;--amber:#ffb700;--red:#ff3b5c;--text:#d6e5e0;--muted:#7a8a96}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,Menlo,monospace}header{padding:12px 16px;border-bottom:1px solid #1e2d3a;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#0a0f14e6;backdrop-filter:blur(8px);z-index:10}.live{display:flex;align-items:center;gap:8px}.dot{width:10px;height:10px;background:var(--neon);border-radius:50%;box-shadow:0 0 12px var(--neon);animation:pulse 1.2s infinite}@keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px;padding:14px}.card{background:var(--card);border:1px solid #1e2d3a;border-radius:14px;padding:12px}.card h3{margin:0 0 8px 0;font-size:11px;letter-spacing:.12em;color:var(--muted)}.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid #2a3d4f}.badge.neon{border-color:var(--neon);color:var(--neon)}.badge.amber{border-color:var(--amber);color:var(--amber)}.badge.red{border-color:var(--red);color:var(--red)}.pipeline{display:flex;gap:6px;flex-wrap:wrap}.node{flex:1;min-width:85px;background:#0e1a24;border:1px solid #1e2d3a;border-radius:10px;padding:6px;text-align:center}.node b{display:block;font-size:10px;color:var(--muted)}.meter{height:6px;background:#0d1b26;border-radius:6px;overflow:hidden;margin-top:8px}.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--neon),#00d4ff);width:0%;transition:width .6s}.console{background:#050a0e;border:1px solid #1a2d3a;border-radius:8px;padding:8px;height:160px;overflow:auto;font-size:11px;line-height:1.4;white-space:pre-wrap}button{cursor:pointer;background:#0e1a24;border:1px solid #1e2d3a;color:var(--neon);border-radius:8px;padding:4px 10px}</style></head><body>
-<header><div><b id="t_title">IrsanAI-A5 LIVE COCKPIT</b> <span style="color:var(--muted)">- Torwart AAP v1.2</span></div><div class="live"><span class="dot"></span><span id="plat" style="font-size:11px">BOOTING</span><button id="langBtn" style="margin-left:10px">DE/EN</button></div></header>
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A5 LIVE COCKPIT V3</title><style>:root{--bg:#060a0e;--card:#111a22;--neon:#00ff88;--cyan:#00e5ff;--amber:#ffb700;--purple:#9d6cff;--red:#ff3b5c;--text:#d6e5e0;--muted:#7a8a96}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,Menlo,monospace}header{padding:10px 14px;border-bottom:1px solid #1e2d3a;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#060a0ee6;backdrop-filter:blur(8px);z-index:10}.dot{width:10px;height:10px;background:var(--neon);border-radius:50%;box-shadow:0 0 12px var(--neon);animation:pulse 1.2s infinite}@keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;padding:12px}.card{background:var(--card);border:1px solid #1e2d3a;border-radius:14px;padding:12px}.card h3{margin:0 0 8px 0;font-size:11px;letter-spacing:.12em;color:var(--muted)}.badge{padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid #2a3d4f}.badge.neon{border-color:var(--neon);color:var(--neon)}.badge.amber{border-color:var(--amber);color:var(--amber)}.badge.cyan{border-color:var(--cyan);color:var(--cyan)}.badge.purple{border-color:var(--purple);color:var(--purple)}.meter{height:6px;background:#0d1b26;border-radius:6px;overflow:hidden}.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--neon),var(--cyan));width:0%;transition:width .5s}.console{background:#04080b;border:1px solid #1a2d3a;border-radius:10px;padding:8px;height:220px;overflow:auto;font-size:11px;line-height:1.5;white-space:pre-wrap}.log{opacity:0;transform:translateY(4px);animation:in .3s forwards}.log.tech{color:#9ab0c2}.log.simple{color:#d6e5e0}.log[data-layer="TORWART"]{color:var(--cyan)}.log[data-layer="A3"]{color:var(--amber)}.log[data-layer="DONE"]{color:var(--neon);font-weight:700}@keyframes in{to{opacity:1;transform:translateY(0)}}.controls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}button{background:#0e1a24;border:1px solid #1e2d3a;color:var(--neon);border-radius:8px;padding:4px 8px;font-size:11px;cursor:pointer}select{background:#0e1a24;border:1px solid #1e2d3a;color:var(--text);border-radius:8px;padding:3px 6px;font-size:11px}</style></head><body>
+<header><div><b>IrsanAI-A5 LIVE COCKPIT V3</b> <span style="color:var(--muted)">- immersive</span></div><div style="display:flex;align-items:center;gap:8px"><span class="dot"></span><span id="plat" style="font-size:10px">BOOT</span><button id="langBtn">DE/EN</button></div></header>
 <div class="grid">
-<div class="card" style="border-color:var(--neon)"><h3 id="t_seedzone">LEGAL SEED ZONE – WAS DARFST DU JAGEN?</h3><div id="t_seedhint" style="font-size:11px;color:var(--muted);margin-bottom:6px">Nur eigene Builds oder Open Source / explizite Crackmes. Jeder Seed SHA256 + Consent geloggt.</div><input id="seed" placeholder="z.B. a5crackme2 oder spd oder ~/a5_targets/my_own.apk" style="width:100%;padding:8px;background:#0e1a24;border:1px solid #1e2d3a;border-radius:8px;color:#d6e5e0"><div style="display:flex;gap:6px;margin-top:6px"><button id="btnRun">▶ RUN</button><span id="seedcheck" style="font-size:11px"></span></div><div id="allowlist" style="margin-top:8px;font-size:11px;line-height:1.5"></div></div>
-<div class="card"><h3>LIVE JOB – PROGRESS + LOG CONSOLE</h3><div style="font-size:11px;color:var(--muted)"><span id="jobId">kein Job</span> – <span id="jobProgress">0%</span></div><div class="meter"><i id="jobbar"></i></div><div id="console" class="console">> Warte auf Seed... Klicke "nutzen" oder RUN\n> Transparenz: Jeder Schritt wird geloggt – Teccies sehen PCode, Nicht-Teccies sehen Status</div></div>
-<div class="card"><h3>A-STACK PIPELINE / A1-A5</h3><div class="pipeline" id="pipeline"></div><div class="meter"><i id="confbar"></i></div></div>
-<div class="card"><h3>TORWART AAP v1.2</h3><div id="torwart" style="font-size:12px">loading...</div></div>
-<div class="card"><h3>EVIDENCE STREAM</h3><div id="evidence" style="font-size:11px">loading...</div></div>
-<div class="card"><h3>SYSTEM</h3><div id="sys" style="font-size:11px">loading...</div></div>
+<div class="card" style="border-color:var(--neon)"><h3>LEGAL SEED ZONE</h3><input id="seed" placeholder="a5crackme2 oder spd" style="width:100%;padding:8px;background:#0e1a24;border:1px solid #1e2d3a;border-radius:8px;color:#d6e5e0"><div style="display:flex;gap:6px;margin-top:6px"><button id="btnRun">▶ START</button><span id="seedcheck"></span></div><div id="allowlist" style="margin-top:8px;font-size:11px"></div></div>
+<div class="card" style="grid-column:span 2"><h3>IMMERSIVE CONSOLE – LIVE SYNCED <span id="jobId" style="color:var(--muted)">kein Job</span> – <span id="jobPct">0%</span></h3><div class="controls"><button id="togTech">Tech: ON</button><button id="togScroll">Auto-Scroll: ON</button><select id="filter"><option value="ALL">Filter: ALL</option><option value="TORWART">TORWART</option><option value="A1">A1 MCP</option><option value="A2">A2 GHIDRA</option><option value="A3">A3 FRIDA</option><option value="A4">A4 CAPA</option><option value="A5">A5 EVIDENCE</option><option value="DONE">DONE</option></select><button id="btnClear">Clear</button><button id="btnExpand">⛶ Expand</button></div><div class="meter"><i id="jobbar"></i></div><div id="console" class="console">> Warte auf Seed... Toggle Tech/Simple für Deep Insight
+> DE/EN schaltet Sprache, Filter wählt Layer</div></div>
+<div class="card"><h3>A-STACK PIPELINE</h3><div id="pipeline" style="display:flex;gap:6px;flex-wrap:wrap"></div><div class="meter" style="margin-top:8px"><i id="confbar"></i></div></div>
+<div class="card"><h3>TORWART AAP v1.2</h3><div id="torwart" style="font-size:12px"></div></div>
+<div class="card"><h3>EVIDENCE STREAM</h3><div id="evidence" style="font-size:11px"></div></div>
 </div>
 <script>
-let LANG='de';
-const I18N={
- de:{title:"IrsanAI-A5 LIVE COCKPIT",seedzone:"LEGAL SEED ZONE – WAS DARFST DU JAGEN?",seedhint:"Nur eigene Builds oder Open Source / explizite Crackmes. Kein Binary-Redistribution. Jeder Seed SHA256 + Consent geloggt.",run:"▶ START",nojob:"kein Job",wait:"> Warte auf Seed... Klicke \"nutzen\" oder START\n> Transparenz: Jeder Schritt wird geloggt – Teccies sehen PCode, Nicht-Teccies sehen Status"},
- en:{title:"IrsanAI-A5 LIVE COCKPIT",seedzone:"LEGAL SEED ZONE – WHAT MAY YOU HUNT?",seedhint:"Only own builds or Open Source / explicit crackmes. No binary redistribution. Every seed logged with SHA256 + consent.",run:"▶ RUN",nojob:"no job",wait:"> Waiting for seed... Click \"use\" or RUN\n> Transparency: Every step logged – techies see PCode, non-techies see status"}
-};
-function applyLang(){
- let t=I18N[LANG];
- document.getElementById('t_title').textContent=t.title;
- document.getElementById('t_seedzone').textContent=t.seedzone;
- document.getElementById('t_seedhint').textContent=t.seedhint;
- document.getElementById('btnRun').textContent=t.run;
- if(!window.currentJob) document.getElementById('console').textContent=t.wait;
-}
-let currentJob=null, pollInt=null;
-async function tick(){
- try{let r=await fetch('/api/metrics');let j=await r.json();
-  document.getElementById('plat').textContent=(j.platform.is_termux?'TERMUX ':'')+j.platform.sys+' | PY '+j.platform.py+' | FRIDA '+j.frida.status.toUpperCase();
-  let nodes=[{k:'A1 MCP',s:'stub',d:'orchestration'},{k:'A2 GHIDRA',s:'ready',d:'headless 12.1'},{k:'A3 FRIDA',s:j.frida.status,d:j.frida.version||'no usb'},{k:'A4 CAPA',s:'ready',d:'capability'},{k:'A5 EVIDENCE',s:j.evidence.count>0?'live':'empty',d:j.evidence.count+' files'}];
-  document.getElementById('pipeline').innerHTML=nodes.map(n=>{let c=n.s==='ready'||n.s==='live'?'neon':n.s==='stub'||n.s==='empty'?'amber':'red';return `<div class="node"><b>${n.k}</b><span class="badge ${c}">${n.s}</span><div style="font-size:10px;color:#7a8a96">${n.d}</div></div>`}).join('');
-  let tw=j.torwart; document.getElementById('torwart').innerHTML=`<span class="badge ${tw.survival==='largely survived'?'neon':'amber'}">${tw.survival}</span> conf ${tw.conf}<br><span style="color:#7a8a96">${tw.residual||''}</span>`;
-  document.getElementById('confbar').style.width=Math.round((tw.conf||0)*100)+'%';
-  let ev=j.evidence; document.getElementById('evidence').innerHTML=`<div>${ev.count} total</div>`+ev.recent.map(e=>`<div><span class="badge amber">${e.conf||'?'}</span> ${e.eid||e.file}</div>`).join('');
-  document.getElementById('sys').innerHTML=`<div>Frida: ${j.frida.installed} - ${j.frida.version||''}</div><div>Platform: ${JSON.stringify(j.platform)}</div>`;
- }catch(e){}
-}
-async function loadAllowed(){
- let r=await fetch('/api/allowed'); let list=await r.json();
- document.getElementById('allowlist').innerHTML=list.map(a=>`<div style="border-bottom:1px dashed #1e2d3a;padding:6px 0"><span class="badge neon">${a.id}</span> <b>${a.name}</b> - ${a.license}<br><span style="color:#7a8a96">${LANG==='de'? (a.de||a.why): a.why} | ${a.repo||a.path||''}</span> <button onclick="setSeed('${a.id}')">${LANG==='de'?'nutzen':'use'}</button></div>`).join('');
-}
-function setSeed(v){ document.getElementById('seed').value=v; checkSeed(); }
-function checkSeed(){
- let v=document.getElementById('seed').value;
- if(!v){ document.getElementById('seedcheck').innerHTML=''; return; }
- let blocked=["whatsapp","facebook","instagram","bank","paypal"];
- if(blocked.some(b=>v.toLowerCase().includes(b))){ document.getElementById('seedcheck').innerHTML='<span class="badge red">BLOCKED</span>'; return; }
- document.getElementById('seedcheck').innerHTML='<span class="badge amber">READY</span> '+v;
-}
-async function runSeed(){
- let seed=document.getElementById('seed').value.trim();
- if(!seed){ alert(LANG==='de'?'Bitte Seed wählen':'Pick a seed'); return; }
- let r=await fetch('/api/seed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seed})});
- let j=await r.json();
- if(r.status!==200){ alert(j.error||'blocked'); return; }
- currentJob=j.job_id;
- document.getElementById('jobId').textContent=currentJob;
- document.getElementById('console').textContent='> Job '+currentJob+' gestartet – seed='+seed+'\n';
- if(pollInt) clearInterval(pollInt);
- pollInt=setInterval(pollJob, 800);
-}
-async function pollJob(){
- if(!currentJob) return;
- let r=await fetch('/api/job/'+currentJob); let j=await r.json();
- document.getElementById('jobProgress').textContent=j.progress+'%';
- document.getElementById('jobbar').style.width=j.progress+'%';
- document.getElementById('console').textContent=(j.logs||[]).join('\n');
- document.getElementById('console').scrollTop=9999;
- if(j.status==='done'){ clearInterval(pollInt); document.getElementById('console').textContent+='\n> DONE – Evidence geschrieben – Transparency 100%'; tick(); }
-}
-document.getElementById('btnRun').addEventListener('click', runSeed);
-document.getElementById('seed').addEventListener('input', checkSeed);
-document.getElementById('langBtn').addEventListener('click', ()=>{ LANG=LANG==='de'?'en':'de'; applyLang(); loadAllowed(); });
-applyLang(); loadAllowed(); setInterval(tick,1500); tick();
+let LANG='de', TECH=true, AUTOSCROLL=true, curJob=null, poll=null;
+const I18N={de:{wait:"> Warte auf Seed... Tech=ON zeigt PCode, Tech=OFF zeigt Simple\n> Filter wählt Layer – immersives Live-Sync Gefühl"},en:{wait:"> Waiting for seed... Tech=ON shows PCode, Tech=OFF simple\n> Filter by layer – immersive live-sync"}};
+function applyLang(){}
+async function tick(){try{let r=await fetch('/api/metrics');let j=await r.json();document.getElementById('plat').textContent=(j.platform.is_termux?'TERMUX ':'')+j.platform.sys+' | FRIDA '+j.frida.status.toUpperCase();let nodes=[{k:'A1 MCP',s:'stub'},{k:'A2 GHIDRA',s:'ready'},{k:'A3 FRIDA',s:j.frida.status},{k:'A4 CAPA',s:'ready'},{k:'A5 EVIDENCE',s:j.evidence.count>0?'live':'empty'}];document.getElementById('pipeline').innerHTML=nodes.map(n=>`<span class="badge ${n.s==='ready'||n.s==='live'?'neon':'amber'}">${n.k} ${n.s}</span>`).join(' ');let tw=j.torwart;document.getElementById('torwart').innerHTML=`<span class="badge amber">${tw.survival}</span> conf ${tw.conf}<br><span style="color:#7a8a96">${tw.residual||''}</span>`;document.getElementById('evidence').innerHTML=`${j.evidence.count} total<br>`+j.evidence.recent.map(e=>`<span class="badge amber">${e.conf||'?'}</span> ${e.eid||e.file}<br>`).join('');}catch(e){}}
+async function loadAllowed(){let r=await fetch('/api/allowed');let list=await r.json();document.getElementById('allowlist').innerHTML=list.map(a=>`<div><span class="badge neon">${a.id}</span> ${a.name} <button onclick="setSeed('${a.id}')">nutzen</button></div>`).join('');}
+function setSeed(v){document.getElementById('seed').value=v;}
+async function runSeed(){let seed=document.getElementById('seed').value.trim();if(!seed)return alert('seed?');let r=await fetch('/api/seed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seed})});let j=await r.json();if(r.status!==200)return alert(j.error);curJob=j.job_id;document.getElementById('jobId').textContent=curJob;document.getElementById('console').innerHTML='';if(poll)clearInterval(poll);poll=setInterval(pollJob,700);}
+async function pollJob(){if(!curJob)return;let r=await fetch('/api/job/'+curJob);let j=await r.json();document.getElementById('jobPct').textContent=j.progress+'%';document.getElementById('jobbar').style.width=j.progress+'%';let con=document.getElementById('console');let filter=document.getElementById('filter').value;let logs=j.logs||[];let filtered=filter==='ALL'?logs:logs.filter(l=>l.layer===filter);con.innerHTML=filtered.map(l=>{let txt=TECH?l.tech:l.simple;return `<div class="log ${TECH?'tech':'simple'}" data-layer="${l.layer}">[${l.ts}] ${txt}</div>`}).join('');if(AUTOSCROLL)con.scrollTop=con.scrollHeight;if(j.status==='done'){clearInterval(poll);con.innerHTML+='<div class="log" data-layer="DONE">> DONE – Transparency 100% – Evidence observed</div>';tick();}}
+document.getElementById('btnRun').addEventListener('click',runSeed);
+document.getElementById('togTech').addEventListener('click',function(){TECH=!TECH;this.textContent='Tech: '+(TECH?'ON':'OFF');if(curJob)pollJob();});
+document.getElementById('togScroll').addEventListener('click',function(){AUTOSCROLL=!AUTOSCROLL;this.textContent='Auto-Scroll: '+(AUTOSCROLL?'ON':'OFF');});
+document.getElementById('filter').addEventListener('change',function(){if(curJob)pollJob();});
+document.getElementById('btnClear').addEventListener('click',()=>{document.getElementById('console').innerHTML=I18N[LANG].wait;});
+document.getElementById('btnExpand').addEventListener('click',()=>{let c=document.getElementById('console');c.style.height=c.style.height==='420px'?'220px':'420px';});
+document.getElementById('langBtn').addEventListener('click',()=>{LANG=LANG==='de'?'en':'de';document.getElementById('console').textContent=I18N[LANG].wait;loadAllowed();});
+loadAllowed();setInterval(tick,1500);tick();
 </script></body></html>
