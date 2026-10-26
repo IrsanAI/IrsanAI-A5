@@ -1,55 +1,87 @@
 // SPDX-License-Identifier: Apache-2.0
-// A3 FRIDA – SPD Barrier vs DR – correlated per-attack, Barrier-only, fail-closed honest
-// Manus Fix: lastDamageRoll/drRoll dürfen nicht global stehen bleiben, Reset nach Absorb, nur Barrier
+// A3 FRIDA v3 – per-attack correlated, drRoll BEFORE damageRoll, Barrier-only, reset, send() to runner
 
 Java.perform(function(){
   var Char = Java.use("com.shatteredpixel.shatteredpixeldungeon.actors.Char");
   var ShieldBuff = Java.use("com.shatteredpixel.shatteredpixeldungeon.actors.buffs.ShieldBuff");
 
-  var currentAttack = null; // {id, damageRoll, drRoll, tsDamage, tsDr}
+  var currentAttack = null;
   var attackId = 0;
 
-  var dmgOverload = Char.damageRoll.overload();
-  Char.damageRoll.overload().implementation = function(){
-    var result = dmgOverload.call(this);
+  // attack() ist Start – hier beginnt echter Angriffspfad
+  function startAttack(attacker, defender){
     attackId++;
-    currentAttack = {id: attackId, damageRoll: result, drRoll: null, tsDamage: Date.now(), tsDr: null, attacker: this.toString().substring(0,80)};
-    console.log("[SPD] attack#" + attackId + " damageRoll=" + result);
-    return result;
+    currentAttack = {
+      id: attackId,
+      attacker: attacker ? attacker.toString().substring(0,80) : "unknown",
+      defender: defender ? defender.toString().substring(0,80) : "unknown",
+      drRoll: null,
+      damageRoll: null,
+      tsStart: Date.now()
+    };
+    console.log("[SPD] attack#" + attackId + " START attacker=" + currentAttack.attacker + " defender=" + currentAttack.defender);
+  }
+
+  // hook both overloads of attack
+  var attack1 = Char.attack.overload('com.shatteredpixel.shatteredpixeldungeon.actors.Char');
+  var attack2 = Char.attack.overload('com.shatteredpixel.shatteredpixeldungeon.actors.Char','float','float','float');
+  
+  Char.attack.overload('com.shatteredpixel.shatteredpixeldungeon.actors.Char').implementation = function(enemy){
+    startAttack(this, enemy);
+    return attack1.call(this, enemy);
+  };
+  Char.attack.overload('com.shatteredpixel.shatteredpixeldungeon.actors.Char','float','float','float').implementation = function(enemy, dmgMulti, dmgBonus, accMulti){
+    startAttack(this, enemy);
+    return attack2.call(this, enemy, dmgMulti, dmgBonus, accMulti);
   };
 
+  // drRoll – kommt VOR damageRoll (Manus Fix) – 390 vor 415
   var drOverload = Char.drRoll.overload();
   Char.drRoll.overload().implementation = function(){
     var result = drOverload.call(this);
-    if(currentAttack && (Date.now() - currentAttack.tsDamage) < 1000){
+    if(currentAttack && (Date.now() - currentAttack.tsStart) < 2000){
       currentAttack.drRoll = result;
-      currentAttack.tsDr = Date.now();
-      console.log("[SPD] attack#" + currentAttack.id + " drRoll=" + result + " correlated to dmg=" + currentAttack.damageRoll);
+      console.log("[SPD] attack#" + currentAttack.id + " drRoll=" + result + " (BEFORE damageRoll)");
     }
     return result;
   };
 
+  // damageRoll – stored overload, EINMAL
+  var dmgOverload = Char.damageRoll.overload();
+  Char.damageRoll.overload().implementation = function(){
+    var result = dmgOverload.call(this);
+    if(currentAttack && (Date.now() - currentAttack.tsStart) < 2000){
+      currentAttack.damageRoll = result;
+      console.log("[SPD] attack#" + currentAttack.id + " damageRoll=" + result + " (AFTER drRoll, correlated)");
+    } else {
+      // falls attack() nicht gehookt (edge), trotzdem neuen Kontext starten
+      attackId++;
+      currentAttack = {id: attackId, attacker: this.toString().substring(0,80), defender: "unknown", drRoll: null, damageRoll: result, tsStart: Date.now()};
+    }
+    return result;
+  };
+
+  // absorbDamage – nur Barrier, nur wenn gleicher Angriff, dr + dmg vorhanden, <2s, dann send() + Reset
   var absorbOverload = ShieldBuff.absorbDamage.overload('int');
   ShieldBuff.absorbDamage.overload('int').implementation = function(dmg){
     var before = this.shielding();
-    var result = absorbOverload.call(this, dmg);
+    var leftover = absorbOverload.call(this, dmg);
     var after = this.shielding();
-    var absorbed = dmg - result;
+    var absorbed = dmg - leftover;
     var buffType = this.getClass().getName();
-
-    // Nur Barrier, nicht irgendein ShieldBuff
     var isBarrier = buffType.indexOf("Barrier") !== -1;
-    
-    // Korrelation nur wenn gleicher Angriff, <1s, drRoll vorhanden, Barrier
-    if(currentAttack && isBarrier && currentAttack.drRoll !== null && (Date.now() - currentAttack.tsDamage) < 1000){
+
+    if(currentAttack && isBarrier && currentAttack.drRoll !== null && currentAttack.damageRoll !== null && (Date.now() - currentAttack.tsStart) < 2000){
       var ev = {
         attackId: currentAttack.id,
+        attacker: currentAttack.attacker,
+        defender: currentAttack.defender,
         ts: Date.now(),
         damageRoll: currentAttack.damageRoll,
         drRoll: currentAttack.drRoll,
         incomingDmg: dmg,
         absorbed: absorbed,
-        leftover: result,
+        leftover: leftover,
         shieldingBefore: before,
         shieldingAfter: after,
         buffType: buffType,
@@ -57,42 +89,17 @@ Java.perform(function(){
         order: "dr_before_barrier"
       };
       console.log("[SPD CORRELATED BARRIER] " + JSON.stringify(ev));
+      
+      // Wichtig: send() an Python Runner, nicht nur console.log (Manus Fix)
+      try{
+        send({type: "spd_evidence", data: ev});
+      }catch(e){ console.log("[SPD] send failed: " + e); }
 
-      // Evidence für Torwart – erst jetzt darf 0.88 möglich sein, aber nur mit echtem SHA + device_id
-      var evidence = {
-        evidence_id: "spd_barrier_dr_order-live-" + Date.now() + "-atk" + currentAttack.id,
-        provider: "a3_frida",
-        target: "spd",
-        finding_id: "spd_barrier_dr_order",
-        confidence: "observed",
-        correlated: true,
-        observed: {
-          barrier_absorb_value: absorbed,
-          shielding_before: before,
-          shielding_after: after,
-          dr_roll: currentAttack.drRoll,
-          dr_min: currentAttack.drRoll,
-          dr_max: currentAttack.drRoll,
-          damage_roll: currentAttack.damageRoll,
-          incoming_damage: dmg,
-          leftover_damage: result,
-          order: "dr_before_barrier",
-          barrier_class: buffType,
-          attack_id: currentAttack.id
-        },
-        frida_version: Frida.version,
-        binary_sha256: "needs-real-apk-sha256-from-actual-build",
-        device_id: "needs-real-device-id",
-        timestamp: Date.now(),
-        ts: Date.now()/1000
-      };
-      console.log("[SPD EVIDENCE] " + JSON.stringify(evidence));
-
-      // Reset – bindet Korrelation an konkreten Angriff, verhindert Wiederverwendung globaler Werte (Manus Fix)
+      // Reset – bindet an konkreten attack() Aufruf, verhindert Wiederverwendung (Manus Fix)
       currentAttack = null;
     }
-    return result;
+    return leftover;
   };
 
-  console.log("[SPD HOOK v2.1] Ready – per-attack correlated, Barrier-only, reset after absorb");
+  console.log("[SPD HOOK v3] Ready – attack() start, drRoll BEFORE damageRoll, Barrier-only, reset, send()");
 });
