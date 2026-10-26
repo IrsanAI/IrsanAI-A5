@@ -106,6 +106,15 @@ def count_real_observed(finding_id: str = "spd_barrier_dr_order") -> int:
             if obs.get("attack_id") is None: continue
             # Manus Edge: ohne live_nonce darf nichts als real zählen
             if not j.get("live_nonce"): continue
+            # Manus Fix: Fixture darf nie als real zählen
+            if j.get("fixture"): continue
+            if j.get("confidence")!="observed": continue
+            # Device/Frida müssen echt sein – kein localhost / unknown aus --fixture
+            dev=j.get("device_id") or ""
+            if "localhost" in dev: continue
+            fr=j.get("frida_version") or ""
+            if fr=="unknown" or not fr: continue
+            if not j.get("live_nonce"): continue
             # SHA muss lokal berechnetem Hash entsprechen – blockt Random-64-char Fake (Manus)
             sha=j.get("binary_sha256") or ""
             if sha != local_hash: continue
