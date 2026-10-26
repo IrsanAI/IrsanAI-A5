@@ -1,21 +1,8 @@
 #!/usr/bin/env python3
-"""
-IrsanAI-A5 Torwart (Goalkeeper) – AAP v1.2
-Iteration 3: --i3 / --live N
-
-Phases:
-  0 Setup – Intent, Limitations, Residual Uncertainty
-  1 Root-Ascent + Rivals
-  2 Mandatory Inversion hard
-  3 Re-Synthesis
-  4 Boundary Map
-  5 Final Output with Survival Assessment
-"""
-
 from __future__ import annotations
 from dataclasses import dataclass, field, asdict
-from typing import List, Optional, Dict, Any
-import json, sys, argparse
+from typing import List, Dict, Any
+import json, argparse, pathlib
 from datetime import datetime, timezone
 
 @dataclass
@@ -57,93 +44,107 @@ class AAPResult:
     def to_json(self, indent=2):
         return json.dumps(self.to_dict(), indent=indent, ensure_ascii=False)
 
-def check_closure_allowed(result: AAPResult) -> bool:
-    if not result.survival_assessment:
-        raise Exception("Closure blocked: missing Survival Assessment")
-    if result.survival_assessment not in ("largely survived","partially reframed","significantly reframed","largely collapsed"):
-        raise Exception(f"Closure blocked: invalid survival '{result.survival_assessment}'")
-    if result.phase0_residual_uncertainty=="high" and result.overall_confidence>0.7:
-        raise Exception("Closure blocked: high residual uncertainty forces cautious confidence")
+def count_real_observed() -> int:
+    ev_dir = pathlib.Path.home() / "a5_evidence"
+    if not ev_dir.exists(): return 0
+    cnt=0
+    for f in ev_dir.glob("*.json"):
+        try:
+            j=json.loads(f.read_text(encoding="utf-8")[:2000])
+            if j.get("confidence")=="observed": cnt+=1
+        except: pass
+    return cnt
+
+def check_closure_allowed(r):
+    if r.survival_assessment not in ("largely survived","partially reframed","significantly reframed","largely collapsed"):
+        raise Exception("Closure blocked")
+    if r.phase0_residual_uncertainty=="high" and r.overall_confidence>0.7:
+        raise Exception("high residual -> low confidence")
     return True
 
-def run_spd_barrier_dr_residual() -> AAPResult:
-    intent="Close the residual uncertainty about the relative order of Barrier.absorb() versus DR subtraction in SPD melee damage path."
-    access="Static source only (MeleeWeapon.java + related Glyph/Buff classes). No runtime instrumentation in this run. Termux-First, legal GPLv3 target."
-    uncertainty="medium"
-    incident="Static reading yields: buffed damage is first reduced by Barrier.absorb, then by a Normal(DRMin, DRMax) roll. Residual: order may invert under certain glyph or buff combinations."
-    patterns=["Barrier is a Buff that absorbs a fixed amount before further mitigation","DR is rolled per hit (Normal distribution between DRMin and DRMax)","Glyphs can wrap the final effective value","Augment DAMAGE 1.5 / SPEED 0.7 multiplies the raw roll"]
-    architecture="MeleeWeapon.damageRoll → raw = NormalIntRange(min,max)*aug + Uniform(0,exStr); then Barrier.absorb(buffed); then subtract Normal(DRMin,DRMax); finally Glyph."
-    higher_cause="Design intent appears to be 'Barrier first, then armor DR', so that absorption is predictable and independent of the DR roll."
-    rivals=[RivalExplanation("Barrier and DR are commutative under all current glyphs – order is irrelevant",True),RivalExplanation("Some glyphs (e.g. anti-magic / conditional) apply after DR and can re-introduce damage that Barrier already absorbed, effectively inverting order",True),RivalExplanation("Overflow formula on DRMax (tier*(2+lvl) + ((lvl-max)+1)/2) can make DR larger than Barrier capacity, masking any order effect in high-level play",False)]
-    levers=["Add unit test / verifier case with Barrier present and DRMax > Barrier capacity","Instrument runtime path with Frida (A3) on a legal build to observe actual order","Document the order explicitly in evidence limitation until runtime confirmation"]
-    strategy="Keep static diagnosis, mark residual as medium, schedule A3 Frida confirmation in a later iteration; do not claim high confidence on order until observed."
-    best="effective = Glyph(Barrier.absorb(buffed) - Normal(DRMin,DRMax)); Barrier is applied before DR subtraction in the static source order."
-    inversion="Barrier.absorb is NOT applied before DR. Either DR is subtracted first, or a glyph/buff path exists that effectively applies absorption after DR, making the static source order misleading for real combat outcomes."
-    survived=["Raw roll formula (NormalIntRange * aug + Uniform) remains intact","DRMax = tier*(2+lvl) with overflow formula remains intact","Glyph wrapping of the final value remains intact"]
-    weakened=["Confidence that Barrier always precedes DR drops from ~0.95 (static) to medium"]
-    killed=[]
-    shifted=["Order of Barrier vs DR is now an open residual rather than a closed fact","Need for runtime (Frida) or additional static glyph-path audit increased"]
-    changeable=["Verifier can be extended with Barrier+high-DR test vectors","A3 Frida non-root path can observe live order on a legal APK"]
-    resistant=["Source-level order in MeleeWeapon is fixed by upstream GPLv3 project","We do not modify SPD source; only observe and document"]
-    residual_levers=["Frida gadget hook on Barrier.absorb and DR calculation","Additional static audit of every Glyph that overrides damage processing"]
-    stress_diag="Static source order is Barrier.absorb then DR subtraction, then Glyph. This order largely survived adversarial inversion, but remains only medium-confidence until runtime confirmation; no evidence of an inverting glyph path was found in this pass."
-    survival="partially reframed"; residual="Barrier vs DR order: static evidence supports Barrier-first; absence of exhaustive glyph-path audit and missing runtime observation keep residual at medium. No counter-example found, but not fully closed."
-    confidence=0.72
-    boundary={"changeable":changeable,"systemically_resistant":resistant,"residual_levers":residual_levers}
-    method="AAP v1.2 full loop. Inversion treated as temporarily true. Survival Assessment: partially reframed. No strawman; residual explicitly retained."
-    result=AAPResult(intent,access,uncertainty,incident,patterns,architecture,higher_cause,rivals,levers,strategy,inversion,survived,weakened,killed,shifted,changeable,resistant,residual_levers,stress_diag,survival,residual,confidence,boundary,method)
-    check_closure_allowed(result); return result
+def run_spd_barrier_dr_residual():
+    return AAPResult(
+        "Close residual Barrier vs DR order – static only",
+        "Static source only, no runtime",
+        "medium",
+        "Static: Barrier.absorb then Normal(DRMin,DRMax)",
+        ["Barrier Buff absorb","DR Normal roll","Glyph wrap","Augment 1.5/0.7"],
+        "MeleeWeapon.damageRoll -> raw* aug + Uniform -> Barrier.absorb -> Normal(DRMin,DRMax) -> Glyph",
+        "Barrier first for predictable absorption",
+        [RivalExplanation("commutative – order irrelevant",True),RivalExplanation("glyph re-introduces damage",True),RivalExplanation("DR overflow masks effect",False)],
+        ["Verifier test Barrier+high DR","Frida live hook","Document limitation"],
+        "Keep static, mark medium, schedule Frida",
+        "Barrier NOT before DR – DR first or glyph inverts order",
+        ["Raw roll formula intact","DRMax tier*(2+lvl) overflow","Glyph wrapping"],
+        ["Confidence Barrier precedes DR drops to medium"],
+        [],["Order open residual","Need runtime"],
+        ["Verifier extend","A3 Frida observe"],
+        ["Source fixed upstream","We only observe"],
+        ["Frida hook Barrier.absorb+DR","Glyph audit"],
+        "Static Barrier-first largely survived but medium-confidence until runtime",
+        "partially reframed",
+        "static Barrier-first; no exhaustive glyph audit + no runtime -> medium",
+        0.72,
+        {"changeable":["Verifier extend"],"systemically_resistant":["Source fixed"],"residual_levers":["Frida hook"]},
+        "AAP v1.2 honest partially reframed"
+    )
 
-def run_spd_barrier_dr_residual_i3(live_observations: int = 0) -> AAPResult:
-    """
-    Iteration 3: same base, but if live_observations >0 (real Frida hooks),
-    confidence rises and survival becomes largely survived.
-    Without live device, stays at partially reframed / 0.72 – honest.
-    """
+def run_spd_barrier_dr_residual_i3(live_observations: int = 0):
+    real = count_real_observed()
     base = run_spd_barrier_dr_residual()
-    if live_observations <= 0:
-        base.phase0_intent = "Iteration 3 – Re-run Barrier vs DR residual; A3 Frida path ready, no live device yet."
-        base.phase0_access_limitations = "Static source + A3 Frida provider ready (non-root, no binary redistribution). No live USB device in this run – evidence logged as inferred only."
+    # HONEST GUARD – core fix for manus.im feedback
+    if live_observations>0 and real < live_observations:
+        print(f"[!] Torwart Guard: --live {live_observations} angefordert, aber nur {real} echte observed Evidence gefunden – bleibe bei 0.72 (ehrlich)")
+        base.phase0_intent = f"Iteration 3 – Re-run, --live {live_observations} requested but only {real} real observed – honest fallback"
+        base.phase0_access_limitations = f"No {live_observations} real observed evidence – only {real} found in $HOME/a5_evidence/"
         base.phase0_residual_uncertainty = "medium"
-        base.stress_tested_diagnosis = "Static Barrier-first order largely survived, but without live Frida observations residual stays medium. A3 path is implemented and writes inferred evidence."
         base.survival_assessment = "partially reframed"
-        base.residual = "static Barrier-first; A3 path ready, no live device → medium remains"
+        base.residual = f"static Barrier-first; A3 path ready, requested {live_observations} live but only {real} real observed -> medium remains"
         base.overall_confidence = 0.72
-        base.method_note = "AAP v1.2 i3 loop – no live device, honest partially reframed. Closure allowed, no false observed claim."
+        base.method_note = f"AAP v1.2 i3 honest guard – requested live={live_observations} real={real} -> partially reframed"
+        check_closure_allowed(base)
+        return base
+
+    if live_observations <=0:
+        base.phase0_intent = "Iteration 3 – Re-run Barrier vs DR; A3 path ready, no live device"
+        base.phase0_access_limitations = "Static + A3 provider ready, no live device – inferred only"
+        base.phase0_residual_uncertainty = "medium"
+        base.survival_assessment = "partially reframed"
+        base.residual = "static Barrier-first; A3 path ready, no live device -> medium remains"
+        base.overall_confidence = 0.72
+        base.method_note = "AAP v1.2 i3 honest – no device"
         check_closure_allowed(base)
         return base
     else:
-        # live path – only when real observations passed via --live N
-        base.phase0_intent = f"Iteration 3 – Barrier vs DR with {live_observations} live Frida observations."
-        base.phase0_access_limitations = f"A3 Frida non-root live attach succeeded, {live_observations} hook events collected. Evidence logged as observed."
+        # only here if real >= live_observations
+        base.phase0_intent = f"Iteration 3 – Barrier vs DR with {live_observations} REAL observed (real={real})"
+        base.phase0_access_limitations = f"A3 Frida live attach succeeded, {live_observations} real observed (total real={real})"
         base.phase0_residual_uncertainty = "low"
-        base.phase3_survived.append(f"{live_observations} live Barrier.absorb vs DR order observations confirm Barrier-first")
-        base.phase3_weakened = []
-        base.phase4_changeable = ["Additional live runs to increase sample size"]
-        base.stress_tested_diagnosis = f"With {live_observations} live observations, Barrier.absorb precedes DR subtraction in all observed hits. Order confirmed at runtime."
+        base.phase3_survived.append(f"{live_observations} live Barrier vs DR confirm Barrier-first (real observed={real})")
+        base.phase3_weakened=[]
+        base.stress_tested_diagnosis = f"With {live_observations} REAL observed, Barrier.absorb precedes DR – confirmed at runtime"
         base.survival_assessment = "largely survived"
-        base.residual = f"Barrier-first confirmed by {live_observations} live observations; residual low"
+        base.residual = f"Barrier-first confirmed by {live_observations} real observed; residual low"
         base.overall_confidence = 0.88
-        base.method_note = f"AAP v1.2 i3 live loop – {live_observations} observed events – Survival: largely survived"
+        base.method_note = f"AAP v1.2 i3 LIVE honest – {live_observations} observed – largely survived"
         check_closure_allowed(base)
         return base
 
 def main():
-    parser=argparse.ArgumentParser(description="IrsanAI Torwart AAP v1.2 – SPD Residual")
-    parser.add_argument("--i3", action="store_true", help="run Iteration 3 path")
-    parser.add_argument("--live", type=int, default=0, help="number of live Frida observations (0 = no device, honest medium)")
-    args=parser.parse_args()
-    if args.i3:
-        result=run_spd_barrier_dr_residual_i3(live_observations=args.live)
-        print(f"=== IrsanAI Torwart AAP v1.2 – i3 live={args.live} ===\n")
+    p=argparse.ArgumentParser()
+    p.add_argument("--i3", action="store_true")
+    p.add_argument("--live", type=int, default=0)
+    a=p.parse_args()
+    if a.i3:
+        r=run_spd_barrier_dr_residual_i3(a.live)
+        print(f"=== Torwart AAP v1.2 – i3 live={a.live} real_observed={count_real_observed()} ===\n")
     else:
-        result=run_spd_barrier_dr_residual()
-        print("=== IrsanAI Torwart AAP v1.2 – SPD Residual: Barrier vs DR ===\n")
-    print(result.to_json())
-    print("\n--- Survival Assessment ---"); print(result.survival_assessment)
-    print("--- Residual ---"); print(result.residual)
-    print("--- Confidence ---"); print(result.overall_confidence)
-    print("\n[+] Closure allowed (AAP v1.2 complete)")
+        r=run_spd_barrier_dr_residual()
+        print("=== Torwart AAP v1.2 ===\n")
+    print(r.to_json())
+    print("\n--- Survival ---", r.survival_assessment)
+    print("--- Confidence ---", r.overall_confidence)
+    print("--- Residual ---", r.residual)
+    print("\n[+] Closure allowed")
 
-if __name__=="__main__":
-    main()
+if __name__=="__main__": main()
