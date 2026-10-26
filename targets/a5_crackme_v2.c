@@ -1,17 +1,14 @@
-/* A5-CrackMe v2 – LEGAL TEST TARGET – 【entity-MIT¦canonical_name=MIT】 License – IrsanAI-A5 Pro
-  * Ziel: A3 Frida + A4 capa + Torwart AAP testen, ohne Fremd-APK
-  * Key: A5-Pro-Cockpit-2026!
-  * Build: gcc -O2 -o a5_crackme_v2 a5_crackme_v2.c
+/* A5-CrackMe v2 – LEGAL TEST TARGET – MIT License – IrsanAI-A5 Pro
+ * Key: A5-Pro-Cockpit-2026! (20 chars)
+ * Build: gcc -O2 -o ~/a5_targets/a5_crackme_v2 targets/a5_crackme_v2.c
  */
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
-#define KEY "A5-Pro-Cockpit-2026!"
 #define KEY_LEN 20
-// simple XOR obfuscation to avoid plain string in binary
-char obf[] = {0x04,0x60,0x2a,0x10,0x1a,0x02,0x2c,0x5c,0x24,0x0e,0x15,0x0a,0x1d,0x4d,0x62,0x60,0x62,0x61,0x62,0x00};
+char obf[] = {0x04,0x70,0x68,0x15,0x37,0x2a,0x68,0x06,0x2a,0x26,0x2e,0x35,0x2c,0x31,0x68,0x77,0x75,0x77,0x73,0x64};
 int check(char *in){
-  if(strlen(in)!=KEY_LEN) return 0;
+  if((int)strlen(in)!=KEY_LEN) return 0;
   for(int i=0;i<KEY_LEN;i++){ if((in[i]^0x45)!=obf[i]) return 0; }
   return 1;
 }
