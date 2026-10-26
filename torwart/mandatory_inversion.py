@@ -100,7 +100,7 @@ def check_closure_allowed(r: AAPResult):
 def run_spd_barrier_dr_residual():
     return AAPResult(
         "SPD Barrier vs DR – static DR before Barrier, live not yet verified",
-        "Static analysis: Char.attack() dr = drRoll() -> max(eff-dr,0) -> damage() -> ShieldBuff.processDamage -> Barrier.absorbDamage. Live verification pending – need real APK SHA + device_id + correlated Barrier absorb in same attack. Fail-closed 0.72 until then.",
+        "SPD-Live-Verifikation noch nicht implementiert – not implemented – Static analysis: Char.attack() dr = drRoll() -> max(eff-dr,0) -> damage() -> ShieldBuff.processDamage -> Barrier.absorbDamage. Live verification pending – need real APK SHA + device_id + correlated Barrier absorb in same attack. Fail-closed 0.72 until then.",
         "medium",
         "Static: DR before Barrier – needs live correlated verification",
         ["Barrier Buff absorb","DR Normal roll","ShieldBuff.processDamage"],
@@ -129,14 +129,15 @@ def run_spd_barrier_dr_residual_i3(live_observations: int = 0):
         if real>0:
             print(f"[+] Torwart v2.1: --live {live_observations} real_correlated_Barrier={real} -> 0.88 LARGELY SURVIVED (DR before Barrier verified live)")
             base.phase0_intent=f"i3 v2.1 – {FINDING} – live verified – real={real} correlated Barrier"
-            base.phase0_access_limitations=f"Real APK SHA + device_id + correlated Barrier absorb in same attack_id present – real={real} – 0.88 allowed"
+            base.phase0_access_limitations=f"Real APK SHA + device_id + correlated Barrier absorb in same attack_id present – real={real} – 0.88 allowed – implemented"
             base.overall_confidence=0.88
             base.survival_assessment="largely survived"
             base.residual=f"Live verified: DR before Barrier, {real} correlated Barrier absorb(s) in same attack_id, fresh <24h"
             base.method_note=f"AAP v2.1 live verified – DR before Barrier – {real} correlated"
         else:
             print(f"[!] Torwart v2.1: --live {live_observations} für {FINDING} – no real correlated Barrier evidence (SHA/device_id/freshness/Barrier check) – real={real} – bleibe bei 0.72")
-            base.phase0_intent=f"i3 v2.1 – {FINDING} – no real correlated Barrier evidence – live requested {live_observations} real={real}"
+            base.phase0_intent=f"i3 v2.1 – {FINDING} – no real correlated Barrier evidence – live requested {live_observations} real={real} – not implemented"
+            base.phase0_access_limitations=f"SPD-Live-Verifikation noch nicht implementiert – not implemented – no real correlated Barrier evidence – real={real} – 0.72 fail-closed"
             base.overall_confidence=0.72
             base.survival_assessment="partially reframed"
     check_closure_allowed(base)
