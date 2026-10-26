@@ -125,6 +125,11 @@ def count_real_observed(finding_id="spd_barrier_dr_order") -> int:
         count+=1
     return count
 
+class _Result(dict):
+    @property
+    def overall_confidence(self):
+        return self.get("confidence", 0.72)
+
 def run_spd_barrier_dr_residual(live=0):
     # production wording, no demo
     real=count_real_observed()
@@ -139,15 +144,15 @@ def run_spd_barrier_dr_residual(live=0):
     except: pass
     if live==0:
         print(f"=== Torwart v3.3 – i3 live=0 real={real} local_hash={local_hash}... ===")
-        return {"finding_id":"spd_barrier_dr_order","confidence":base_conf,"mode":"production","reason":"awaiting live attestation"}
+        return _Result(finding_id="spd_barrier_dr_order", confidence=base_conf, mode="production", reason="awaiting live attestation")
     else:
         print(f"[Torwart v3.3] live_nonce={nonce_path.read_text()[:8] if nonce_path.exists() else '-'} local_hash={local_hash}... local_frida={local_frida} real_correlated={real}")
         if real==0:
             print(f"[!] Torwart v3.3: --live 1 für spd_barrier_dr_order – no real correlated – real=0 – bleibe bei 0.72")
-            return {"finding_id":"spd_barrier_dr_order","confidence":0.72,"mode":"production","real":real}
+            return _Result(finding_id="spd_barrier_dr_order", confidence=0.72, mode="production", real=real)
         else:
             print(f"[+] Torwart v3.3: ATTESTED LIVE – real={real} → 0.88")
-            return {"finding_id":"spd_barrier_dr_order","confidence":0.88,"mode":"production","real":real}
+            return _Result(finding_id="spd_barrier_dr_order", confidence=0.88, mode="production", real=real)
 
 def run_spd_barrier_dr_residual_i3(live):
     return run_spd_barrier_dr_residual(live)
