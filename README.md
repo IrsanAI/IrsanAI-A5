@@ -1,3 +1,12 @@
+
+## Status: Fail-Closed Honest – SPD-Live-Verifikation noch nicht implementiert
+
+- Aktueller statischer Zwischenstand: **partially reframed 0.72**
+- SPD 0.88 ist **absichtlich unerreichbar** bis echter SPD Build in ~/a5_targets/spd + korrelierter Frida Hook für damageRoll + Barrier.absorb + DR existiert
+- Cockpit Demo-Jobs sind **Simulation/Demo – inferred only**, kein "Simulation – No real analysis – inferred only – SPD live not implemented"
+- Verifier: tests/test_torwart_strict.py – 4 Tests: no live ->0.72, crackme != SPD, fake SPD JSON ->0.72, not implemented marked
+
+
 # IrsanAI-A5
 
 **Agent-first Reverse Engineering Stack**  
@@ -26,8 +35,8 @@ A5 + AAP Torwart (Goalkeeper)
 ## Baseline Targets (legal only)
 
 1. **Shattered Pixel Dungeon** (GPLv3)  
-   Formula proven, Verifier **5/5 PASS**  
-   Static confidence 0.94–0.96 (high) / E2E 0.80 (medium)  
+   Formula hypothesis – static only, needs SPD live verification, Verifier **4/4 TESTS PASS – fail-closed – SPD live not implemented**  
+   Static confidence 0.72–0.72 (high) / E2E 0.80 (medium)  
    Residual: Barrier vs. DR order
 
 2. **checkme.c** (own 13-byte key `A5-CrackMe!!!`)  
