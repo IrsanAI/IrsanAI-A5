@@ -169,14 +169,16 @@ def run_spd_barrier_dr_residual_i3(live_observations: int = 0):
     FINDING="spd_barrier_dr_order"
     base = run_spd_barrier_dr_residual()
     if live_observations>0:
-        # FIX v3.1: Nonce ZUERST generieren, DANN zählen – verhindert 0.88 Meldung + spätere Exception
+        # FIX v3.1: Nonce ZUERST generieren, DANN zählen
         import random, string
         nonce=''.join(random.choices(string.ascii_letters+string.digits, k=24))
         get_live_nonce_path().parent.mkdir(exist_ok=True)
         get_live_nonce_path().write_text(nonce)
         real = count_real_observed(FINDING)
+        print(f"[Torwart v3.1] live_nonce={nonce} local_hash={get_local_target_hash()[:12]}... local_frida={get_local_frida_version()} real_correlated={real}")
     else:
         real = count_real_observed(FINDING)
+        print(f"=== Torwart v3.1 – i3 live=0 real={real} local_hash={get_local_target_hash()[:12]}... ===")
         print(f"[Torwart v3] live_nonce={nonce} local_hash={get_local_target_hash()[:12]}... local_frida={get_local_frida_version()} real_correlated={real}")
         if real>0:
             print(f"[+] Torwart v3: --live {live_observations} real_correlated_Barrier={real} with local hash match + nonce -> 0.88")
