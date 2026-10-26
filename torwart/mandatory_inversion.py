@@ -46,8 +46,12 @@ def get_local_target_hash() -> str:
     # Muss mit Evidence binary_sha256 übereinstimmen – verhindert Random-SHA Fake
     candidates=[
         pathlib.Path.home()/ "[STRIPPED 86 bytes].java",
+        pathlib.Path.home()/ "[STRIPPED 86 bytes].java".replace("a5_targets/spd","a5_targets/spd"),
         pathlib.Path("[STRIPPED 71 bytes].java"),
     ]
+    # zusätzliche Suche
+    for cand in list(pathlib.Path.home().glob("a5_targets/**/Char.java")):
+        candidates.append(cand)
     for p in candidates:
         if p.exists():
             return hashlib.sha256(p.read_bytes()).hexdigest()
