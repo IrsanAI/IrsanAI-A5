@@ -134,6 +134,10 @@ class _Result(dict):
         # v2 compat: no live -> partially reframed
         return self.get("survival_assessment", "partially reframed")
     @property
+    def phase0_access_limitations(self):
+        return self.get("phase0_access_limitations", "nicht implementiert / not implemented – awaiting live Frida attestation on real device, production fail-closed 0.72")
+
+    @property
     def residual(self):
         return self.get("real", 0)
     def __getattr__(self, k):
@@ -157,15 +161,15 @@ def run_spd_barrier_dr_residual(live=0):
     except: pass
     if live==0:
         print(f"=== Torwart v3.3 – i3 live=0 real={real} local_hash={local_hash}... ===")
-        return _Result(finding_id="spd_barrier_dr_order", confidence=base_conf, mode="production", reason="awaiting live attestation", survival_assessment="partially reframed")
+        return _Result(finding_id="spd_barrier_dr_order", confidence=base_conf, mode="production", reason="awaiting live attestation", survival_assessment="partially reframed", phase0_access_limitations="nicht implementiert / not implemented – SPD live attestation requires real device with Frida Gadget, currently 0.72 SECURE AWAITING LIVE ATTESTATION")
     else:
         print(f"[Torwart v3.3] live_nonce={nonce_path.read_text()[:8] if nonce_path.exists() else '-'} local_hash={local_hash}... local_frida={local_frida} real_correlated={real}")
         if real==0:
             print(f"[!] Torwart v3.3: --live 1 für spd_barrier_dr_order – no real correlated – real=0 – bleibe bei 0.72")
-            return _Result(finding_id="spd_barrier_dr_order", confidence=0.72, mode="production", real=real, survival_assessment="partially reframed")
+            return _Result(finding_id="spd_barrier_dr_order", confidence=0.72, mode="production", real=real, survival_assessment="partially reframed", phase0_access_limitations="nicht implementiert / not implemented – awaiting live attestation, real_correlated=0")
         else:
             print(f"[+] Torwart v3.3: ATTESTED LIVE – real={real} → 0.88")
-            return _Result(finding_id="spd_barrier_dr_order", confidence=0.88, mode="production", real=real, survival_assessment="attested")
+            return _Result(finding_id="spd_barrier_dr_order", confidence=0.88, mode="production", real=real, survival_assessment="attested", phase0_access_limitations="attested live – production ready")
 
 def run_spd_barrier_dr_residual_i3(live):
     return run_spd_barrier_dr_residual(live)
