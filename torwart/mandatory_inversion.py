@@ -104,6 +104,8 @@ def count_real_observed(finding_id: str = "spd_barrier_dr_order") -> int:
             if obs.get("damage_roll") is None: continue
             if obs.get("order")!="dr_before_barrier": continue
             if obs.get("attack_id") is None: continue
+            # Manus Edge: ohne live_nonce darf nichts als real zählen
+            if not j.get("live_nonce"): continue
             # SHA muss lokal berechnetem Hash entsprechen – blockt Random-64-char Fake (Manus)
             sha=j.get("binary_sha256") or ""
             if sha != local_hash: continue
@@ -165,13 +167,16 @@ def run_spd_barrier_dr_residual():
 
 def run_spd_barrier_dr_residual_i3(live_observations: int = 0):
     FINDING="spd_barrier_dr_order"
-    real = count_real_observed(FINDING)
     base = run_spd_barrier_dr_residual()
     if live_observations>0:
-        # generiere neuen live_nonce für diesen Run – Fake ohne nonce wird blockiert
+        # FIX v3.1: Nonce ZUERST generieren, DANN zählen – verhindert 0.88 Meldung + spätere Exception
+        import random, string
         nonce=''.join(random.choices(string.ascii_letters+string.digits, k=24))
         get_live_nonce_path().parent.mkdir(exist_ok=True)
         get_live_nonce_path().write_text(nonce)
+        real = count_real_observed(FINDING)
+    else:
+        real = count_real_observed(FINDING)
         print(f"[Torwart v3] live_nonce={nonce} local_hash={get_local_target_hash()[:12]}... local_frida={get_local_frida_version()} real_correlated={real}")
         if real>0:
             print(f"[+] Torwart v3: --live {live_observations} real_correlated_Barrier={real} with local hash match + nonce -> 0.88")
