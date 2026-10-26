@@ -9,7 +9,6 @@ def test_no_live():
     print("PASS no live -> 0.72")
 
 def test_crackme_does_not_unlock_spd():
-    # Crackme Evidence darf SPD nicht auf 0.88 heben
     ev_dir=pathlib.Path.home()/ "a5_evidence"
     ev_dir.mkdir(exist_ok=True)
     fake=ev_dir/"test_crackme.json"
@@ -35,7 +34,8 @@ def test_fake_spd_json():
 
 def test_spd_not_implemented():
     r=t.run_spd_barrier_dr_residual()
-    assert "not implemented" in r.phase0_access_limitations.lower()
+    low = r.phase0_access_limitations.lower()
+    assert ("nicht implementiert" in low or "not implemented" in low), f"must be marked not implemented, got {r.phase0_access_limitations}"
     assert r.overall_confidence==0.72
     print("PASS SPD not implemented marked")
 
