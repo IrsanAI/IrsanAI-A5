@@ -108,11 +108,11 @@ def main():
     args=ap.parse_args()
 
     if args.dry_run:
-        fake={"absorbed":5,"drRoll":3,"damageRoll":10,"attackId":1,"buffType":"...Barrier","incomingDmg":10,"leftover":2, "_fixture": True}
+        fake={"absorbed":5,"drRoll":3,"damageRoll":10,"attackId":1,"buffType":"...Barrier","incomingDmg":10,"leftover":2, "_fixture": True, "frida_session_token": ""}
         write_evidence(fake, dry=True)
         return
     if args.fixture:
-        fake={"absorbed":5,"drRoll":3,"damageRoll":10,"attackId":1,"buffType":"com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier","incomingDmg":10,"leftover":2, "_fixture": True}
+        fake={"absorbed":5,"drRoll":3,"damageRoll":10,"attackId":1,"buffType":"com.shatteredpixel.shatteredpixeldungeon.actors.buffs.Barrier","incomingDmg":10,"leftover":2, "_fixture": True, "frida_session_token": ""}
         write_evidence(fake, dry=False)
         return
 

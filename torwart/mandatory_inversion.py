@@ -43,25 +43,25 @@ class AAPResult:
 
 def get_local_target_hash() -> str:
     # Einheitlich mit Runner: erst APK, dann Char.java – verhindert Hash-Konflikt (Manus)
+    import hashlib, pathlib
     for apk in pathlib.Path.home().glob("a5_targets/**/*.apk"):
         if apk.exists():
             try:
-                import hashlib
                 return hashlib.sha256(apk.read_bytes()).hexdigest()
-            except: pass
+            except:
+                pass
     candidates=[
         pathlib.Path.home()/ "[STRIPPED 86 bytes].java",
         pathlib.Path("[STRIPPED 71 bytes].java"),
     ]
     for cand in list(pathlib.Path.home().glob("a5_targets/**/Char.java")):
         candidates.append(cand)
-    for p in candidates:
-        if p.exists():
-            return hashlib.sha256(p.read_bytes()).hexdigest()
-    # Fallback: Hash von ShieldBuff als Anker
-    p2=pathlib.Path.home()/ "[STRIPPED 98 bytes].java"
-    if p2.exists():
-        return hashlib.sha256(p2.read_bytes()).hexdigest()
+    for c in candidates:
+        try:
+            if c.exists():
+                return hashlib.sha256(c.read_bytes()).hexdigest()
+        except:
+            pass
     return "no-target-found"
 
 def get_local_frida_version() -> str:
