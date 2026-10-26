@@ -1,28 +1,28 @@
-# providers/ – A1 / A3
+# A3 SPD Live – Fail-Closed
 
-No live Ghidra or Frida binaries are shipped.
+**Status:** 0.72 fail-closed, Cockpit Demo/inferred bis echter Device-Run.
 
-## A1 – MCP Provider stub
-`a1_mcp_provider_stub.py` – orchestration interface only (ReaGhidraBridge protocol).
+## Warum 0.72?
+Guard `torwart/mandatory_inversion.py` zählt nur echte korrelierte Evidence:
+- provider=a3_frida, target=spd, finding_id=spd_barrier_dr_order
+- confidence=observed, correlated=true, fixture!=true
+- observed.barrier_absorb_value + dr_roll + attack_id + order=dr_before_barrier + Barrier-only
+- binary_sha256 = APK-Hash bevorzugt (wie Runner), sonst Char.java 8d372e8e...
+- device_id == get_expected_device_id() (nicht localhost), frida_version == echt (nicht unknown)
+- live_nonce + frida_session_token + .frida_session_<nonce> File mit gleichem Token (nur echter Frida on_message schreibt es)
 
-## A3 – Frida Gadget non-root (Iteration 3)
+Handgeschriebene JSON selbst mit korrektem Nonce+Hash+Device+Frida -> 0 ohne Session-File -> 0.72.
 
-`a3_frida_gadget_stub.py`:
+## Runner
+- `python providers/a3_spd_live_run.py --dry-run` -> schreibt inferred Demo, zählt 0
+- `python providers/a3_spd_live_run.py --fixture` -> schreibt inferred + fixture:true, zählt 0 (Demo-Schleife geblockt)
+- Live: braucht USB/Local Device mit Frida: spawn/attach -> ShieldBuff.absorbDamage -> drRoll vor damageRoll -> send({type:spd_evidence})
 
-- `non_root_only=True` enforced (root rejected)
-- Optional live path if `frida` Python module + USB device are present
-- Always writes evidence JSON under `$HOME/a5_evidence/`
-- Claims **observed** only when live attach produced hook data; otherwise **inferred**
-- Includes SPD Barrier / DR order probe script template (legal GPLv3 target only)
+## Cockpit
+Server bindet 127.0.0.1, schreibt immer inferred demo-only bis Guard 0.88 liefert.
 
-### Usage
-
-```bash
-python3 providers/a3_frida_gadget_stub.py
-# → mode=stub without device; evidence JSON still written
-
-python3 torwart/mandatory_inversion.py --i3
-# → partially reframed / 0.72
-
-python3 torwart/mandatory_inversion.py --i3 --live 3
-# → largely survived / 0.88 – only with real observations EOF
+## Tests (müssen alle grün)
+- test_torwart_strict.py (4)
+- test_torwart_fake_full.py
+- test_torwart_fake_correct_hash_no_nonce.py
+- test_torwart_fake_full_handwritten_with_nonce.py (Manus final edge)
