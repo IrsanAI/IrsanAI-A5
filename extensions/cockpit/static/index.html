@@ -1,29 +1,87 @@
-<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>A5 LIVE COCKPIT V3</title><style>:root{--bg:#060a0e;--card:#111a22;--neon:#00ff88;--cyan:#00e5ff;--amber:#ffb700;--purple:#9d6cff;--red:#ff3b5c;--text:#d6e5e0;--muted:#7a8a96}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:ui-monospace,Menlo,monospace}header{padding:10px 14px;border-bottom:1px solid #1e2d3a;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:#060a0ee6;backdrop-filter:blur(8px);z-index:10}.dot{width:10px;height:10px;background:var(--neon);border-radius:50%;box-shadow:0 0 12px var(--neon);animation:pulse 1.2s infinite}@keyframes pulse{0%{opacity:1}50%{opacity:.4}100%{opacity:1}}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:12px;padding:12px}.card{background:var(--card);border:1px solid #1e2d3a;border-radius:14px;padding:12px}.card h3{margin:0 0 8px 0;font-size:11px;letter-spacing:.12em;color:var(--muted)}.badge{padding:2px 8px;border-radius:999px;font-size:11px;border:1px solid #2a3d4f}.badge.neon{border-color:var(--neon);color:var(--neon)}.badge.amber{border-color:var(--amber);color:var(--amber)}.badge.cyan{border-color:var(--cyan);color:var(--cyan)}.badge.purple{border-color:var(--purple);color:var(--purple)}.meter{height:6px;background:#0d1b26;border-radius:6px;overflow:hidden}.meter i{display:block;height:100%;background:linear-gradient(90deg,var(--neon),var(--cyan));width:0%;transition:width .5s}.console{background:#04080b;border:1px solid #1a2d3a;border-radius:10px;padding:8px;height:220px;overflow:auto;font-size:11px;line-height:1.5;white-space:pre-wrap}.log{opacity:0;transform:translateY(4px);animation:in .3s forwards}.log.tech{color:#9ab0c2}.log.simple{color:#d6e5e0}.log[data-layer="TORWART"]{color:var(--cyan)}.log[data-layer="A3"]{color:var(--amber)}.log[data-layer="DONE"]{color:var(--neon);font-weight:700}@keyframes in{to{opacity:1;transform:translateY(0)}}.controls{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px}button{background:#0e1a24;border:1px solid #1e2d3a;color:var(--neon);border-radius:8px;padding:4px 8px;font-size:11px;cursor:pointer}select{background:#0e1a24;border:1px solid #1e2d3a;color:var(--text);border-radius:8px;padding:3px 6px;font-size:11px}</style></head><body>
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>A5 Cockpit – Fail-Closed Honest 0.72</title>
+<style>
+:root{--bg:#0b0f14;--card:#121a22;--muted:#7a8a96;--neon:#00ff88;--amber:#ffcc00}
+body{margin:0;background:var(--bg);color:#cbd5df;font-family:ui-monospace,Menlo,Consolas,monospace}
+.card{background:var(--card);border:1px solid #1e2a36;border-radius:12px;padding:12px;margin:8px}
+.badge{display:inline-block;padding:2px 8px;border-radius:999px;font-size:12px}
+.badge.stub{background:#2a3441;color:#9fb0c0}
+.badge.amber{background:#3a3000;color:var(--amber);border:1px solid var(--amber)}
+.badge.neon{background:#002a1a;color:var(--neon);border:1px solid var(--neon)}
+.console{height:320px;overflow:auto;background:#070b10;border-radius:8px;padding:8px;white-space:pre-wrap;font-size:12px}
+.meter{height:6px;background:#1a2633;border-radius:999px;overflow:hidden;margin:6px 0}
+.meter i{display:block;height:100%;width:0;background:var(--amber);transition:width .3s}
+.controls{display:flex;gap:6px;flex-wrap:wrap;margin:6px 0}
+button,select{background:#1a2633;color:#cbd5df;border:1px solid #243447;border-radius:8px;padding:4px 8px}
+</style>
+</head>
+<body>
 <div style="background:#ffcc00;color:#000;padding:8px;text-align:center;font-weight:bold">SPD-Live-Verifikation noch nicht implementiert – aktueller Stand 0.72 fail-closed – Demo-Jobs sind Simulation (inferred only)</div>
-<header><div><b>IrsanAI-A5 LIVE COCKPIT V3</b> <span style="color:var(--muted)">- immersive</span></div><div style="display:flex;align-items:center;gap:8px"><span class="dot"></span><span id="plat" style="font-size:10px">BOOT</span><button id="langBtn">DE/EN</button></div></header>
-<div class="grid">
-<div class="card" style="border-color:var(--neon)"><h3>LEGAL SEED ZONE</h3><input id="seed" placeholder="a5crackme2 oder spd" style="width:100%;padding:8px;background:#0e1a24;border:1px solid #1e2d3a;border-radius:8px;color:#d6e5e0"><div style="display:flex;gap:6px;margin-top:6px"><button id="btnRun">▶ START</button><span id="seedcheck"></span></div><div id="allowlist" style="margin-top:8px;font-size:11px"></div></div>
-<div class="card" style="grid-column:span 2"><h3>IMMERSIVE CONSOLE – LIVE SYNCED <span id="jobId" style="color:var(--muted)">kein Job</span> – <span id="jobPct">0%</span></h3><div class="controls"><button id="togTech">Tech: ON</button><button id="togScroll">Auto-Scroll: ON</button><select id="filter"><option value="ALL">Filter: ALL</option><option value="TORWART">TORWART</option><option value="A1">A1 MCP</option><option value="A2">A2 GHIDRA</option><option value="A3_FRIDA_NOT_IMPLEMENTED">A3 FRIDA – NOT IMPLEMENTED – NOT IMPLEMENTED (needs SPD build)</option><option value="A4">A4 CAPA</option><option value="A5">A5 EVIDENCE</option><option value="DONE">DONE</option></select><button id="btnClear">Clear</button><button id="btnExpand">⛶ Expand</button></div><div class="meter"><i id="jobbar"></i></div><div id="console" class="console">> Warte auf Seed... Toggle Tech/Simple für Deep Insight
-> DE/EN schaltet Sprache, Filter wählt Layer</div></div>
-<div class="card"><h3>A-STACK PIPELINE</h3><div id="pipeline" style="display:flex;gap:6px;flex-wrap:wrap"></div><div class="meter" style="margin-top:8px"><i id="confbar"></i></div></div>
-<div class="card"><h3>TORWART AAP v1.2</h3><div id="torwart" style="font-size:12px"></div></div>
-<div class="card"><h3>EVIDENCE STREAM</h3><div id="evidence" style="font-size:11px"></div></div>
-</div>
+<div class="card">Platform: <span id="plat">…</span> | Frida-Paket: <span id="fridaPkg">…</span> – aber SPD-Live NOT IMPLEMENTED</div>
+<div class="card" id="pipeline">Lade…</div>
+<div class="card"><div id="torwart">Torwart lädt…</div><div class="meter"><i id="jobbar"></i></div></div>
+<div class="card" style="grid-column:span 2"><h3>IMMERSIVE CONSOLE – DEMO-SIMULATION SYNCED <span id="jobId" style="color:var(--muted)">kein Job</span> – <span id="jobPct">0%</span></h3><div class="controls"><button id="togTech">Tech: ON</button><button id="togScroll">Auto-Scroll: ON</button><select id="filter"><option value="ALL">Filter: ALL</option><option value="TORWART">TORWART</option><option value="A1">A1 MCP</option><option value="A2">A2 GHIDRA</option><option value="A3">A3 FRIDA</option><option value="A4">A4 CAPA</option><option value="A5">A5 EVIDENCE</option><option value="DONE">DONE</option></select><button id="btnClear">Clear</button><button id="btnExpand">⛶ Expand</button></div><div id="console" class="console">> Warte auf Seed... Toggle Tech/Simple für Deep Insight</div></div>
+<div class="card"><div id="evidence">Evidence lädt…</div></div>
+
 <script>
-let LANG='de', TECH=true, AUTOSCROLL=true, curJob=null, poll=null;
-const I18N={de:{wait:"> Warte auf Seed... Tech=ON zeigt PCode, Tech=OFF zeigt Simple\n> Filter wählt Layer – immersives Live-Sync Gefühl"},en:{wait:"> Waiting for seed... Tech=ON shows PCode, Tech=OFF simple\n> Filter by layer – immersive live-sync"}};
-function applyLang(){}
-async function tick(){try{let r=await fetch('/api/metrics');let j=await r.json();document.getElementById('plat').textContent=(j.platform.is_termux?'TERMUX ':'')+j.platform.sys+' | FRIDA '+j.frida.status.toUpperCase();let nodes=[{k:'A1 MCP',s:'stub'},{k:'A2 GHIDRA',s:'ready'},{k:'A3 FRIDA – NOT IMPLEMENTED',s:j.frida.status},{k:'A4 CAPA',s:'ready'},{k:'A5 EVIDENCE',s:j.evidence.count>0?'live':'empty'}];document.getElementById('pipeline').innerHTML=nodes.map(n=>`<span class="badge ${n.s==='ready'||n.s==='live'?'neon':'amber'}">${n.k} ${n.s}</span>`).join(' ');let tw=j.torwart;document.getElementById('torwart').innerHTML=`<span class="badge amber">${tw.survival}</span> conf ${tw.conf}<br><span style="color:#7a8a96">${tw.residual||''}</span>`;document.getElementById('evidence').innerHTML=`${j.evidence.count} total<br>`+j.evidence.recent.map(e=>`<span class="badge amber">${e.conf||'?'}</span> ${e.eid||e.file}<br>`).join('');}catch(e){}}
-async function loadAllowed(){let r=await fetch('/api/allowed');let list=await r.json();document.getElementById('allowlist').innerHTML=list.map(a=>`<div><span class="badge neon">${a.id}</span> ${a.name} <button onclick="setSeed('${a.id}')">nutzen</button></div>`).join('');}
-function setSeed(v){document.getElementById('seed').value=v;}
-async function runSeed(){let seed=document.getElementById('seed').value.trim();if(!seed)return alert('seed?');let r=await fetch('/api/seed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seed})});let j=await r.json();if(r.status!==200)return alert(j.error);curJob=j.job_id;document.getElementById('jobId').textContent=curJob;document.getElementById('console').innerHTML='';if(poll)clearInterval(poll);poll=setInterval(pollJob,700);}
-async function pollJob(){if(!curJob)return;let r=await fetch('/api/job/'+curJob);let j=await r.json();document.getElementById('jobPct').textContent=j.progress+'%';document.getElementById('jobbar').style.width=j.progress+'%';let con=document.getElementById('console');let filter=document.getElementById('filter').value;let logs=j.logs||[];let filtered=filter==='ALL'?logs:logs.filter(l=>l.layer===filter);con.innerHTML=filtered.map(l=>{let txt=TECH?l.tech:l.simple;return `<div class="log ${TECH?'tech':'simple'}" data-layer="${l.layer}">[${l.ts}] ${txt}</div>`}).join('');if(AUTOSCROLL)con.scrollTop=con.scrollHeight;if(j.status==='done'){clearInterval(poll);con.innerHTML+='<div class="log" data-layer="DONE">> DONE – Simulation – inferred only – SPD live not implemented – Transparency 100% – Evidence observed</div>';tick();}}
-document.getElementById('btnRun').addEventListener('click',runSeed);
-document.getElementById('togTech').addEventListener('click',function(){TECH=!TECH;this.textContent='Tech: '+(TECH?'ON':'OFF');if(curJob)pollJob();});
-document.getElementById('togScroll').addEventListener('click',function(){AUTOSCROLL=!AUTOSCROLL;this.textContent='Auto-Scroll: '+(AUTOSCROLL?'ON':'OFF');});
-document.getElementById('filter').addEventListener('change',function(){if(curJob)pollJob();});
-document.getElementById('btnClear').addEventListener('click',()=>{document.getElementById('console').innerHTML=I18N[LANG].wait;});
-document.getElementById('btnExpand').addEventListener('click',()=>{let c=document.getElementById('console');c.style.height=c.style.height==='420px'?'220px':'420px';});
-document.getElementById('langBtn').addEventListener('click',()=>{LANG=LANG==='de'?'en':'de';document.getElementById('console').textContent=I18N[LANG].wait;loadAllowed();});
-loadAllowed();setInterval(tick,1500);tick();
-</script></body></html>
+let TECH=true, AUTOSCROLL=true, curJob=null, poll=null;
+document.getElementById('togTech').onclick=()=>{TECH=!TECH;document.getElementById('togTech').textContent='Tech: '+(TECH?'ON':'OFF');};
+document.getElementById('togScroll').onclick=()=>{AUTOSCROLL=!AUTOSCROLL;document.getElementById('togScroll').textContent='Auto-Scroll: '+(AUTOSCROLL?'ON':'OFF');};
+document.getElementById('btnClear').onclick=()=>{document.getElementById('console').innerHTML='';};
+
+async function tick(){
+  try{
+    let r=await fetch('/api/metrics'); let j=await r.json();
+    document.getElementById('plat').textContent=(j.platform.is_termux?'TERMUX ':'')+j.platform.sys+' '+j.platform.py;
+    document.getElementById('fridaPkg').textContent=j.frida.status+' '+(j.frida.version||'')+' – SPD-Live dennoch NOT IMPLEMENTED';
+    // FAIL-CLOSED: alle A-Layer als stub / not implemented, niemals ready/live
+    let nodes=[
+      {k:'A1 MCP',s:'stub – orchestration only'},
+      {k:'A2 GHIDRA',s:'stub – no SPD decompile – NOT IMPLEMENTED'},
+      {k:'A3 FRIDA',s:'NOT IMPLEMENTED – needs SPD build – stub – fail-closed'},
+      {k:'A4 CAPA',s:'stub – no SPD capa – NOT IMPLEMENTED'},
+      {k:'A5 EVIDENCE',s:'inferred demo only – fail-closed 0.72'}
+    ];
+    document.getElementById('pipeline').innerHTML=nodes.map(n=>`<span class="badge stub">${n.k} ${n.s}</span>`).join(' ');
+    let tw=j.torwart;
+    document.getElementById('torwart').innerHTML=`<span class="badge amber">${tw.survival||'partially reframed'}</span> conf ${tw.conf||0.72} – fail-closed – SPD-Live not implemented<br><span style="color:#7a8a96">${tw.residual||''}</span>`;
+    document.getElementById('evidence').innerHTML=`${j.evidence.count} total (inferred demo only)<br>`+j.evidence.recent.map(e=>`<span class="badge stub">${e.conf||'inferred'}</span> ${e.eid||e.file}<br>`).join('');
+  }catch(e){}
+}
+
+async function pollJob(){
+  if(!curJob) return;
+  let r=await fetch('/api/job/'+curJob); let j=await r.json();
+  document.getElementById('jobPct').textContent=j.progress+'%';
+  document.getElementById('jobbar').style.width=j.progress+'%';
+  let con=document.getElementById('console');
+  let filter=document.getElementById('filter').value;
+  let logs=j.logs||[];
+  let filtered=filter==='ALL'?logs:logs.filter(l=>l.layer===filter);
+  con.innerHTML=filtered.map(l=>{let txt=TECH?l.tech:l.simple; return `<div class="log" data-layer="${l.layer}">[${l.ts}] ${txt}</div>`;}).join('');
+  if(AUTOSCROLL) con.scrollTop=con.scrollHeight;
+  if(j.status==='done'){
+    clearInterval(poll);
+    con.innerHTML+='<div class="log" data-layer="DONE">[DONE] Simulation abgeschlossen – keine echte Analyse; Demo-Datensatz inferred – SPD-Live-Verifikation noch nicht implementiert – 0.72 fail-closed</div>';
+    tick();
+  }
+}
+
+setInterval(tick,2000); tick();
+
+async function startSeed(){
+  let seed=prompt('Seed (z.B. a5crackme, a5crackme2, demo)');
+  if(!seed) return;
+  let r=await fetch('/api/seed',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({seed})});
+  let j=await r.json();
+  if(j.error){ alert(j.error); return; }
+  curJob=j.job_id; document.getElementById('jobId').textContent=curJob;
+  poll=setInterval(pollJob,800);
+}
+document.addEventListener('keydown',e=>{ if(e.key==='Enter') startSeed(); });
+</script>
+</body>
+</html>

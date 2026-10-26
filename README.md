@@ -3,7 +3,7 @@
 
 - Aktueller statischer Zwischenstand: **partially reframed 0.72**
 - SPD 0.88 ist **absichtlich unerreichbar** bis echter SPD Build in ~/a5_targets/spd + korrelierter Frida Hook für damageRoll + Barrier.absorb + DR existiert
-- Cockpit Demo-Jobs sind **Simulation/Demo – inferred only**, kein "Simulation – No real analysis – inferred only – SPD live not implemented"
+- Cockpit Demo-Jobs sind **Simulation/Demo – inferred only** – keine echte Analyse
 - Verifier: tests/test_torwart_strict.py – 4 Tests: no live ->0.72, crackme != SPD, fake SPD JSON ->0.72, not implemented marked
 
 
