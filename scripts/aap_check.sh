@@ -1,16 +1,16 @@
 #!/bin/bash
 set -e
 cd ~/irsanai
-echo "=== AAP Check Production v4.0 – Non-Forgeable ==="
+echo "=== AAP Check Production v4.1 – Hardened per Grok Audit ==="
 rm ~/a5_evidence/.live_nonce ~/a5_evidence/spd_barrier*.json ~/a5_evidence/.frida_session_* ~/a5_evidence/fake_*.json ~/a5_evidence/.runner_secret 2>/dev/null || true
 PYTHONPATH=. python3 tests/test_torwart_strict.py
 PYTHONPATH=. python3 tests/test_torwart_fake_full.py
 PYTHONPATH=. python3 tests/test_torwart_fake_correct_hash_no_nonce.py
 PYTHONPATH=. python3 tests/test_torwart_fake_full_handwritten_with_nonce.py
 PYTHONPATH=. python3 tests/test_integration_fixture_must_not_unlock.py
-# v4.0 FS forgery: source=frida_js with self-made session + token must be 0
+# v4.0/4.1 FS forgery: source=frida_js with self-made session must be 0
 PYTHONPATH=. python3 - << 'PY'
-import pathlib, json, time, uuid, hashlib, hmac, os
+import pathlib, json, time, uuid, hashlib
 from torwart.mandatory_inversion import count_real_observed, get_live_nonce_path, get_local_target_hash, get_expected_device_id, get_local_frida_version, is_frida_live
 ev_dir=pathlib.Path.home()/ "a5_evidence"
 ev_dir.mkdir(exist_ok=True)
@@ -29,9 +29,11 @@ fake.write_text(json.dumps({
 }))
 cnt=count_real_observed()
 print(f"FS forgery source=frida_js self-made session count={cnt} expected 0")
-assert cnt==0, f"FS forgery with source=frida_js must be 0 in v4.0, got {cnt}"
+print(f"is_frida_live={is_frida_live()} expected False in isolated HOME")
+assert cnt==0, f"FS forgery must be 0 in v4.1, got {cnt}"
+assert is_frida_live()==False, f"is_frida_live must be False without SPD process, got True – F1 not fixed"
 fake.unlink(); (ev_dir/ f".frida_session_{nonce}").unlink(missing_ok=True)
 get_live_nonce_path().unlink(missing_ok=True)
-print("PASS v4.0 FS forgery blocked – non-forgeable")
+print("PASS v4.1 FS forgery blocked + is_frida_live hardened – Grok F1 fixed")
 PY
-echo "PRODUCTION READY v4.0 – 0.72 SECURE, FS forgery blocked, live Frida required for 0.88"
+echo "PRODUCTION READY v4.1 – 0.72 SECURE, FS forgery blocked, is_frida_live hardened per Grok"
