@@ -36,7 +36,7 @@ A5 + AAP Torwart (Goalkeeper)
 
 1. **Shattered Pixel Dungeon** (GPLv3)  
    Formula hypothesis – static only, needs SPD live verification, Verifier **4/4 TESTS PASS – fail-closed – SPD live not implemented**  
-   Static confidence 0.72–0.72 (high) / E2E 0.80 (medium)  
+   Static confidence 0.72 fail-closed – SPD-Live-Verifikation noch nicht implementiert – no E2E yet  
    Residual: Barrier vs. DR order
 
 2. **checkme.c** (own 13-byte key `A5-CrackMe!!!`)  

@@ -29,8 +29,8 @@ def get_torwart():
         sys.path.insert(0,str(REPO_ROOT))
         import torwart.mandatory_inversion as t
         r=t.run_spd_barrier_dr_residual_i3(0)
-        return {"survival":r.survival_assessment,"conf":r.overall_confidence}
-    except Exception as e: return {"survival":"error","conf":0}
+        return {"survival":r.survival_assessment,"conf":r.overall_confidence,"residual":r.residual}
+    except Exception as e: return {"survival":"error","conf":0,"residual":str(e)}
 
 def get_platform():
     is_termux="com.termux" in os.environ.get("PREFIX","")
@@ -43,15 +43,16 @@ def start_job(seed):
     jid=f"job-{int(time.time())}"
     JOBS[jid]={"id":jid,"seed":seed,"status":"running","progress":0,"logs":[],"start":time.time()}
     def run():
-        steps=[("VALIDATE","Seed validieren + Allowlist + SHA256","INFO"),("TORWART","Torwart AAP v1.2","TORWART"),("A1_MCP","A1 MCP Orchestrierung","A1"),("A2_GHIDRA","A2 Ghidra PCode decompile","A2"),("A3_FRIDA","A3 Frida Gadget non-root","A3"),("A4_CAPA","A4 capa + PCode","A4"),("A5_EVIDENCE","A5 Evidence-Graph JSON","A5"),("DONE","Fertig Transparency","DONE")]
+        steps=[("VALIDATE","Seed validieren + Allowlist","INFO"),("TORWART","Torwart AAP v1.2 FINAL – SPD-Live NOT IMPLEMENTED – 0.72 fail-closed","TORWART"),("A1_MCP","A1 MCP Orchestrierung – stub","A1"),("A2_GHIDRA","A2 Ghidra PCode decompile – stub – no SPD build","A2"),("A3_FRIDA","A3 FRIDA – SPD-Live NOT IMPLEMENTED – Stub – needs SPD build","A3"),("A4_CAPA","A4 capa – stub – no SPD capa","A4"),("A5_EVIDENCE","A5 Evidence-Graph – demo inferred only","A5"),("DONE","Simulation – inferred only – SPD live not implemented","DONE")]
         for idx,(code,name,layer) in enumerate(steps):
             ts=datetime.now().strftime("%H:%M:%S")
             with LOCK:
-                JOBS[jid]["logs"].append({"simple":f"[{code}] {name} – seed={seed}","tech":f"[{code}] {name} | {layer} | ts={ts}","layer":layer,"code":code,"ts":ts})
+                JOBS[jid]["logs"].append({"simple":f"[{code}] {name} – seed={seed} – DEMO SIMULATION","tech":f"[{code}] {name} | {layer} | ts={ts} | demo-simulation","layer":layer,"code":code,"ts":ts})
                 JOBS[jid]["progress"]=int((idx+1)/len(steps)*100)
-            time.sleep(0.7)
-        ev={"evidence_id":f"cockpit-{jid}","provider":"cockpit","seed":seed,"confidence":"inferred"}
-        (EVIDENCE_DIR/f"cockpit-{jid}.json").write_text(json.dumps(ev))
+            time.sleep(0.6)
+        ev={"evidence_id":f"cockpit-demo-{jid}","provider":"cockpit","seed":seed,"confidence":"inferred","mode":"demo-simulation","note":"SPD-Live-Verifikation noch nicht implementiert – inferred only – fail-closed 0.72"}
+        EVIDENCE_DIR.mkdir(exist_ok=True)
+        (EVIDENCE_DIR/f"cockpit-demo-{jid}.json").write_text(json.dumps(ev))
         with LOCK: JOBS[jid]["status"]="done"
     threading.Thread(target=run,daemon=True).start()
     return jid
@@ -88,5 +89,5 @@ class H(http.server.SimpleHTTPRequestHandler):
 if __name__=="__main__":
     os.chdir(REPO_ROOT)
     import argparse; p=argparse.ArgumentParser(); p.add_argument("--port",type=int,default=8080); a=p.parse_args()
-    print(f"[A5 COCKPIT V3 HONEST] http://127.0.0.1:{a.port} – localhost only, inferred only, guard active")
+    print(f"[A5 COCKPIT V3 FINAL HONEST] http://127.0.0.1:{a.port} – localhost only, inferred demo only, SPD live NOT IMPLEMENTED 0.72")
     with socketserver.TCPServer(("127.0.0.1", a.port), H) as httpd: httpd.serve_forever()
