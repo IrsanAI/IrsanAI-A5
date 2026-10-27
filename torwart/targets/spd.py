@@ -1,6 +1,9 @@
-# torwart/targets/spd.py – SPD-spezifische Logik, aus Core ausgelagert (Le Chat Kritik #3)
+
 PKG = "com.shatteredpixel.shatteredpixeldungeon"
 FINDING_ID = "spd_barrier_dr_order"
+TARGET_NAME = "spd"
+PROCESS_KEYWORDS = ["shatteredpixel", "shatteredpixeldungeon"]
+PACKAGE_NAME = PKG
 
 def is_valid_target_file(path):
     txt = path.read_text(errors='ignore')
@@ -10,6 +13,18 @@ def is_valid_target_file(path):
     if "Barrier" not in txt and "ShieldBuff" not in txt: return False
     if "a5_targets" not in str(path): return False
     return True
+
+def is_target_process(proc_name: str) -> bool:
+    name = (proc_name or "").lower()
+    for kw in PROCESS_KEYWORDS:
+        if kw in name:
+            return True
+    if name == PKG.lower():
+        return True
+    return False
+
+def is_valid_target_name(t: str) -> bool:
+    return t == TARGET_NAME
 
 def validate_observed(obs):
     if not obs.get("barrier_absorb_value"): return False, "no barrier_absorb_value"
