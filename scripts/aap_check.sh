@@ -1,14 +1,14 @@
 #!/bin/bash
 set -e
-cd "$(dirname "$0")/.."  # v4.3.3 portable – was cd ~/irsanai which fails on CI
-echo "=== AAP Check Production v4.3.3 – Le Chat blockers fixed ==="
+cd "$(dirname "$0")/.."  # v4.3.4 portable – was cd ~/irsanai which fails on CI
+echo "=== AAP Check Production v4.3.4 – Le Chat blockers fixed ==="
 rm ~/a5_evidence/.live_nonce ~/a5_evidence/spd_barrier*.json ~/a5_evidence/.frida_session_* ~/a5_evidence/fake_*.json ~/a5_evidence/.runner_secret 2>/dev/null || true
-PYTHONPATH=. python3 tests/test_torwart_strict.py
-PYTHONPATH=. python3 tests/test_torwart_fake_full.py
-PYTHONPATH=. python3 tests/test_torwart_fake_correct_hash_no_nonce.py
-PYTHONPATH=. python3 tests/test_torwart_fake_full_handwritten_with_nonce.py
-PYTHONPATH=. python3 tests/test_integration_fixture_must_not_unlock.py
-PYTHONPATH=. python3 - << 'PY'
+PYTHONPATH=/data/data/com.termux/files/usr/lib/python3.12/site-packages:. python3.12 tests/test_torwart_strict.py
+PYTHONPATH=/data/data/com.termux/files/usr/lib/python3.12/site-packages:. python3.12 tests/test_torwart_fake_full.py
+PYTHONPATH=/data/data/com.termux/files/usr/lib/python3.12/site-packages:. python3.12 tests/test_torwart_fake_correct_hash_no_nonce.py
+PYTHONPATH=/data/data/com.termux/files/usr/lib/python3.12/site-packages:. python3.12 tests/test_torwart_fake_full_handwritten_with_nonce.py
+PYTHONPATH=/data/data/com.termux/files/usr/lib/python3.12/site-packages:. python3.12 tests/test_integration_fixture_must_not_unlock.py
+PYTHONPATH=/data/data/com.termux/files/usr/lib/python3.12/site-packages:. python3.12 - << 'PY'
 import pathlib, json, time, uuid, hmac as hmac_mod
 from torwart.mandatory_inversion import count_real_observed_verbose, count_real_observed, get_live_nonce_path, get_local_target_hash, get_expected_device_id, get_local_frida_version, is_frida_live
 ev_dir=pathlib.Path.home()/ "a5_evidence"
@@ -46,4 +46,4 @@ fake.unlink(); (ev_dir/ f".frida_session_{nonce}").unlink(missing_ok=True)
 get_live_nonce_path().unlink(missing_ok=True)
 print("PASS v4.3 FS forgery blocked + is_frida_live hardened + no HMAC leak + rejections logged")
 PY
-echo "PRODUCTION READY v4.3.3 – 0.72 SECURE – Le Chat blockers fixed – ready for signing"
+echo "PRODUCTION READY v4.3.4 – 0.72 SECURE – no segfault – 0.72 SECURE – Le Chat blockers fixed – ready for signing"

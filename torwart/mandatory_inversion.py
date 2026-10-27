@@ -51,13 +51,7 @@ def get_local_frida_version() -> str:
         if v!="unknown": return v
     except Exception:
         pass
-    try:
-        import subprocess
-        out=subprocess.check_output(["frida","--version"], text=True, timeout=2).strip()
-        if out: return out
-    except Exception:
-        pass
-    return "unknown"
+    return "unknown"  # v4.3.4 no subprocess – avoids segfault on Termux 17.2.14
 
 def get_expected_device_id() -> str:
     try:
