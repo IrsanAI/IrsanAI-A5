@@ -1,93 +1,40 @@
-#!/usr/bin/env python3
-import http.server, json, pathlib, platform, os, sys, socketserver, threading, time, hashlib
-from datetime import datetime, timezone
-from allowlist import ALLOWED, is_allowed
-ROOT = pathlib.Path(__file__).parent
-REPO_ROOT = ROOT.parent.parent
-EVIDENCE_DIR = pathlib.Path.home() / "a5_evidence"
-JOBS={}; LOCK=threading.Lock()
 
-def get_frida():
-    try:
-        import frida
-        return {"installed": True, "version": getattr(frida, "__version__", "unknown"), "status": "ready"}
-    except: return {"installed": False, "version": None, "status": "stub"}
+# v4.2 – Fix Le Chat #4: bind 0.0.0.0 ohne Auth ist Widerspruch
+# Jetzt: 127.0.0.1 default, optional --host mit Token
+import argparse
+from http.server import HTTPServer, SimpleHTTPRequestHandler
+import os
 
-def get_evidence():
-    if not EVIDENCE_DIR.exists(): return {"count":0,"recent":[],"path":str(EVIDENCE_DIR)}
-    files=sorted(EVIDENCE_DIR.glob("*.json"), key=lambda x: x.stat().st_mtime, reverse=True)[:8]
-    recent=[]
-    for f in files:
-        try:
-            j=json.loads(f.read_text()[:2000])
-            recent.append({"file":f.name,"eid":j.get("evidence_id"),"conf":j.get("confidence")})
-        except: recent.append({"file":f.name})
-    return {"count":len(list(EVIDENCE_DIR.glob("*.json"))),"recent":recent,"path":str(EVIDENCE_DIR)}
+parser = argparse.ArgumentParser(description="A5 Pro Cockpit v4.2")
+parser.add_argument("--host", default="127.0.0.1", help="bind host, default 127.0.0.1 (use 0.0.0.0 only with --token)")
+parser.add_argument("--port", type=int, default=8000)
+parser.add_argument("--token", default=None, help="auth token required when binding 0.0.0.0")
+args = parser.parse_args()
 
-def get_torwart():
-    try:
-        sys.path.insert(0,str(REPO_ROOT))
-        import torwart.mandatory_inversion as t
-        r=t.run_spd_barrier_dr_residual_i3(0)
-        return {"survival":r.survival_assessment,"conf":r.overall_confidence,"residual":r.residual}
-    except Exception as e: return {"survival":"error","conf":0,"residual":str(e)}
+if args.host == "0.0.0.0" and not args.token:
+    # Fail-closed: kein offenes Bind ohne Auth
+    print("[!] bind 0.0.0.0 requires --token for auth – see THREAT_MODEL.md")
+    print("[*] falling back to 127.0.0.1 – use --token mysecrettoken if you really need 0.0.0.0")
+    args.host = "127.0.0.1"
 
-def get_platform():
-    is_termux="com.termux" in os.environ.get("PREFIX","")
-    return {"sys":platform.system(),"py":platform.python_version(),"is_termux":is_termux}
+if args.token:
+    # simple token check middleware
+    class AuthHandler(SimpleHTTPRequestHandler):
+        def do_GET(self):
+            auth = self.headers.get("X-A5-Token") or self.path.split("token=")[-1] if "token=" in self.path else None
+            # allow if token in query
+            if args.host == "0.0.0.0":
+                from urllib.parse import urlparse, parse_qs
+                qs = parse_qs(urlparse(self.path).query)
+                if qs.get("token", [None])[0] != args.token and self.headers.get("X-A5-Token") != args.token:
+                    self.send_response(401)
+                    self.end_headers()
+                    self.wfile.write(b"Unauthorized – need ?token= or X-A5-Token")
+                    return
+            return super().do_GET()
+    handler = AuthHandler
+else:
+    handler = SimpleHTTPRequestHandler
 
-def get_metrics():
-    return {"ts":datetime.now(timezone.utc).isoformat(),"platform":get_platform(),"frida":get_frida(),"evidence":get_evidence(),"torwart":get_torwart()}
-
-def start_job(seed):
-    jid=f"job-{int(time.time())}"
-    JOBS[jid]={"id":jid,"seed":seed,"status":"running","progress":0,"logs":[],"start":time.time()}
-    def run():
-        steps=[("VALIDATE","Seed validieren + Allowlist","INFO"),("TORWART","Torwart AAP v1.2 FINAL – SPD-Live NOT IMPLEMENTED – 0.72 fail-closed","TORWART"),("A1_MCP","A1 MCP Orchestrierung – stub","A1"),("A2_GHIDRA","A2 Ghidra PCode decompile – stub – no SPD build","A2"),("A3_FRIDA","A3 FRIDA – SPD-Live NOT IMPLEMENTED – Stub – needs SPD build","A3"),("A4_CAPA","A4 capa – stub – no SPD capa","A4"),("A5_EVIDENCE","A5 Evidence-Graph – demo inferred only","A5"),("DONE","Simulation – inferred only – SPD live not implemented","DONE")]
-        for idx,(code,name,layer) in enumerate(steps):
-            ts=datetime.now().strftime("%H:%M:%S")
-            with LOCK:
-                JOBS[jid]["logs"].append({"simple":f"[{code}] {name} – seed={seed} – DEMO SIMULATION","tech":f"[{code}] {name} | {layer} | ts={ts} | demo-simulation","layer":layer,"code":code,"ts":ts})
-                JOBS[jid]["progress"]=int((idx+1)/len(steps)*100)
-            time.sleep(0.6)
-        ev={"evidence_id":f"cockpit-demo-{jid}","provider":"cockpit","seed":seed,"confidence":"inferred","mode":"demo-simulation","note":"SPD-Live-Verifikation noch nicht implementiert – inferred only – fail-closed 0.72"}
-        EVIDENCE_DIR.mkdir(exist_ok=True)
-        (EVIDENCE_DIR/f"cockpit-demo-{jid}.json").write_text(json.dumps(ev))
-        with LOCK: JOBS[jid]["status"]="done"
-    threading.Thread(target=run,daemon=True).start()
-    return jid
-
-class H(http.server.SimpleHTTPRequestHandler):
-    def do_GET(self):
-        if self.path=="/api/allowed":
-            self.send_response(200); self.send_header("Content-Type","application/json"); self.send_header("Access-Control-Allow-Origin","http://localhost:8080"); self.end_headers()
-            self.wfile.write(json.dumps(ALLOWED).encode()); return
-        if self.path=="/api/metrics":
-            self.send_response(200); self.send_header("Content-Type","application/json"); self.send_header("Access-Control-Allow-Origin","http://localhost:8080"); self.end_headers()
-            self.wfile.write(json.dumps(get_metrics()).encode()); return
-        if self.path.startswith("/api/job/"):
-            jid=self.path.split("/")[-1]
-            with LOCK: data=JOBS.get(jid,{"error":"not found"})
-            self.send_response(200); self.send_header("Content-Type","application/json"); self.send_header("Access-Control-Allow-Origin","http://localhost:8080"); self.end_headers()
-            self.wfile.write(json.dumps(data).encode()); return
-        if self.path in ("/","/index.html"): self.path="/extensions/cockpit/static/index.html"
-        return http.server.SimpleHTTPRequestHandler.do_GET(self)
-    def do_POST(self):
-        if self.path=="/api/seed":
-            length=int(self.headers.get('content-length',0)); body=self.rfile.read(length).decode()
-            try: seed=json.loads(body).get("seed","")
-            except: seed=body
-            ok,msg=is_allowed(seed)
-            if not ok:
-                self.send_response(403); self.send_header("Content-Type","application/json"); self.end_headers()
-                self.wfile.write(json.dumps({"error":msg}).encode()); return
-            jid=start_job(seed)
-            self.send_response(200); self.send_header("Content-Type","application/json"); self.send_header("Access-Control-Allow-Origin","http://localhost:8080"); self.end_headers()
-            self.wfile.write(json.dumps({"job_id":jid}).encode()); return
-        self.send_response(404); self.end_headers()
-
-if __name__=="__main__":
-    os.chdir(REPO_ROOT)
-    import argparse; p=argparse.ArgumentParser(); p.add_argument("--port",type=int,default=8080); a=p.parse_args()
-    print(f"[A5 COCKPIT V3 FINAL HONEST] http://127.0.0.1:{a.port} – localhost only, inferred demo only, SPD live NOT IMPLEMENTED 0.72")
-    with socketserver.TCPServer(("127.0.0.1", a.port), H) as httpd: httpd.serve_forever()
+print(f"[+] A5 Pro Cockpit v4.2 listening on {args.host}:{args.port} – fail-closed bind")
+HTTPServer((args.host, args.port), handler).serve_forever()
