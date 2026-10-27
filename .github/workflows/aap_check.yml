@@ -1,13 +1,24 @@
-name: AAP Check v4.3.1
-on: [push, pull_request]
+name: AAP Check v4.3.3
+
+on:
+  push:
+    branches: [ main, nextlevel ]
+  pull_request:
+    branches: [ main ]
+
 jobs:
   aap-check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
-        with: {python-version: '3.11'}
-      - run: |
-          pip install frida-tools || true
+        with:
+          python-version: '3.11'
+      - name: Install frida-tools
+        run: pip install frida-tools
+      - name: Run AAP Check Production v4.3.3
+        run: |
           chmod +x scripts/aap_check.sh
           ./scripts/aap_check.sh
+      - name: Verify Torwart modules compile
+        run: python3 -m py_compile torwart/mandatory_inversion.py torwart/targets/spd.py
