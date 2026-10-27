@@ -18,7 +18,8 @@ serve_root = pathlib.Path(args.root) if args.root else pathlib.Path(__file__).pa
 if not serve_root.exists():
     serve_root = pathlib.Path.cwd() / "extensions" / "cockpit" / "dist"
     if not serve_root.exists():
-        serve_root = pathlib.Path.cwd()
+        print(f"[!] dist not found at {serve_root} – fail-closed, exit")
+        import sys; sys.exit(1)
 
 os.chdir(serve_root)
 print(f"[+] Serving {serve_root} on {args.host}:{args.port}")

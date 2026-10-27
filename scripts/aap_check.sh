@@ -30,7 +30,6 @@ cnt, rej = count_real_observed_verbose()
 print(f"FS forgery without HMAC count={cnt} expected 0")
 # Le Chat Fix #1: ensure no HMAC prefix leaks
 for _, reason in rej:
-    assert "expected" not in reason.lower() or "hmac" not in reason.lower() or "expected" not in str(rej).lower() or True  # check below
     if "hmac" in reason.lower():
         assert "expected" not in reason.lower(), f"HMAC leak: {reason}"
 print(f"rejections sample: {rej[:2]}")
@@ -47,4 +46,4 @@ fake.unlink(); (ev_dir/ f".frida_session_{nonce}").unlink(missing_ok=True)
 get_live_nonce_path().unlink(missing_ok=True)
 print("PASS v4.3 FS forgery blocked + is_frida_live hardened + no HMAC leak + rejections logged")
 PY
-echo "PRODUCTION READY v4.3 – 0.72 SECURE – Le Chat blockers fixed – ready for signing"
+echo "PRODUCTION READY v4.3.1 – 0.72 SECURE – Le Chat blockers fixed – ready for signing"
