@@ -72,6 +72,7 @@ def get_expected_device_id() -> str:
 
 def is_frida_live_verbose():
     log=[]
+    found_spd=False
     try:
         import frida
         dm = frida.get_device_manager()
@@ -83,12 +84,21 @@ def is_frida_live_verbose():
                 for p in procs:
                     if is_target_process(p.name):
                         log.append(f"found SPD process {p.name} pid={p.pid} on {dev.id}")
-                        return True, log
+                        found_spd=True
+                        break
+                if found_spd:
+                    break
             except Exception as e:
                 log.append(f"enumerate_processes fail on {dev}: {e}")
                 continue
     except Exception as e:
         log.append(f"frida not live: {e}")
+
+    if not found_spd:
+        log.append("is_frida_live=False – no SPD process found")
+        return False, log
+
+    # SPD process found – now require private token as second factor (Manus v4.3.4 fix #2)
     try:
         priv_dir = pathlib.Path(f"/data/data/{SPD_PKG}/files")
         if priv_dir.exists():
@@ -100,7 +110,7 @@ def is_frida_live_verbose():
                         continue
                     try:
                         if f.stat().st_uid != os.getuid():
-                            log.append(f"private token owned by app UID {f.stat().st_uid} != {os.getuid()} – valid live signal")
+                            log.append(f"private token owned by app UID {f.stat().st_uid} != {os.getuid()} – valid live signal + SPD process found")
                             return True, log
                         else:
                             log.append(f"private token same UID {f} – ignored in prod (sandbox root)")
@@ -108,9 +118,10 @@ def is_frida_live_verbose():
                         log.append(f"stat fail {f}: {e}")
                 except Exception as e:
                     log.append(f"private token check fail {f}: {e}")
+        log.append("is_frida_live=False – SPD process found but no valid private token")
     except Exception as e:
         log.append(f"private dir check fail: {e}")
-    log.append("is_frida_live=False – no SPD process found")
+
     return False, log
 
 def is_frida_live() -> bool:
@@ -288,10 +299,12 @@ def count_real_observed_verbose(finding_id=SPD_FINDING):
             continue
         try:
             priv = pathlib.Path(f"/data/data/{SPD_PKG}/files/.a5_frida_token_{j.get('live_nonce')}")
-            if priv.exists():
-                if priv.read_text().strip()!=token:
-                    rejections.append((f"{fp.name} private token mismatch", ""))
-                    continue
+            if not priv.exists():
+                rejections.append((f"{fp.name} private token", "missing"))
+                continue
+            if priv.read_text().strip()!=token:
+                rejections.append((f"{fp.name} private token mismatch", ""))
+                continue
         except Exception as e:
             rejections.append((f"{fp.name} private token check", str(e)))
             continue

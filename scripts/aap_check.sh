@@ -1,7 +1,7 @@
 #!/bin/bash
 set -e
-cd "$(dirname "$0")/.."  # v4.3.4 portable – was cd ~/irsanai which fails on CI
-echo "=== AAP Check Production v4.3.4 – Le Chat blockers fixed ==="
+cd "$(dirname "$0")/.."  # v4.3.5 portable – Manus fixes: private token mandatory, is_frida_live requires SPD+token
+echo "=== AAP Check Production v4.3.5 – Manus private token fixes ==="
 rm ~/a5_evidence/.live_nonce ~/a5_evidence/spd_barrier*.json ~/a5_evidence/.frida_session_* ~/a5_evidence/fake_*.json ~/a5_evidence/.runner_secret 2>/dev/null || true
 PYTHONPATH=/data/data/com.termux/files/usr/lib/python3.12/site-packages:. python3.12 tests/test_torwart_strict.py
 PYTHONPATH=/data/data/com.termux/files/usr/lib/python3.12/site-packages:. python3.12 tests/test_torwart_fake_full.py
@@ -28,14 +28,12 @@ fake.write_text(json.dumps({
 }))
 cnt, rej = count_real_observed_verbose()
 print(f"FS forgery without HMAC count={cnt} expected 0")
-# Le Chat Fix #1: ensure no HMAC prefix leaks
 for _, reason in rej:
     if "hmac" in reason.lower():
         assert "expected" not in reason.lower(), f"HMAC leak: {reason}"
 print(f"rejections sample: {rej[:2]}")
 assert cnt==0, f"must be 0 without runner_secret HMAC, got {cnt}"
 assert is_frida_live()==False, "is_frida_live must be False without SPD process"
-# check that HMAC leak is fixed
 leak=False
 for f,r in rej:
     if "expected" in r and len(r)>10 and "hmac" in r.lower():
@@ -46,4 +44,4 @@ fake.unlink(); (ev_dir/ f".frida_session_{nonce}").unlink(missing_ok=True)
 get_live_nonce_path().unlink(missing_ok=True)
 print("PASS v4.3 FS forgery blocked + is_frida_live hardened + no HMAC leak + rejections logged")
 PY
-echo "PRODUCTION READY v4.3.4 – 0.72 SECURE – no segfault – 0.72 SECURE – Le Chat blockers fixed – ready for signing"
+echo "PRODUCTION READY v4.3.5 – 0.72 SECURE – Manus private token fixes – ready for signing"
