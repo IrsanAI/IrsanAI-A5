@@ -101,7 +101,7 @@ def write_evidence(ev_data):
     # v4.0 HMAC
     runner_hmac = ""
     if token and not is_fixture and secret:
-        runner_hmac = hmac.new(secret.encode(), f"{token}{nonce}{attack_id}".encode(), hashlib.sha256).hexdigest()
+        runner_hmac = hmac.new(secret.encode(), f"{token}|{nonce}|{attack_id}".encode(), hashlib.sha256).hexdigest()
     out={
         "finding_id":"spd_barrier_dr_order","provider":"a3_frida","target":"spd","confidence":conf,"correlated": not is_fixture,
         "observed":{
